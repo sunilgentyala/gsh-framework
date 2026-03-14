@@ -1,0 +1,368 @@
+# ============================================================
+# Gentyala-Sovereign Hunt (GSH) Framework
+# Sovereign Sentinel Default Policy Configuration
+# Version: 1.0.0-beta
+# Author: Sunil Gentyala <sunil.gentyala@ieee.org>
+# Last Updated: 2026-03-01
+#
+# This file defines the default behavioral enforcement policy
+# for Sovereign Sentinel deployments. All thresholds should be
+# validated against a 7-day passive baseline before activating
+# enforcement (standard or aggressive mode).
+#
+# Sections:
+#   - global          : Framework-wide settings
+#   - sentinel        : Sentinel agent deployment parameters
+#   - hunt_001        : Agentic Loop Detection policy
+#   - hunt_002        : DDI Tunneling Anomaly policy
+#   - hunt_003        : Model Poisoning Baseline policy
+#   - hunt_004        : Rogue Agent Detection policy
+#   - ztlv            : Zero-Trust Logic Validation gate settings
+#   - ddi_fusion      : DDI-AI Fusion telemetry settings
+#   - alerting        : SIEM alert output configuration
+#   - egress_allowlist: Approved outbound destinations
+# ============================================================
+
+global:
+  framework_version: "1.0.0-beta"
+  organization: ""                        # Set to your organization name
+  environment: "production"               # production | staging | development
+  log_level: "INFO"                       # DEBUG | INFO | WARN | ERROR
+  baseline_window_days: 7                 # Minimum baseline before enforcement activation
+  probe_set_path: "probes/standardized-probe-set-v1.json"
+  timezone: "UTC"
+
+# ============================================================
+# SENTINEL AGENT CONFIGURATION
+# ============================================================
+sentinel:
+  default_mode: "standard"               # passive | standard | aggressive
+  # passive    : Observe and log only. No blocking. Use during baseline window.
+  # standard   : Alert + quarantine on confirmed threat signals.
+  # aggressive : Block on anomaly threshold breach. Use only in isolated environments.
+
+  baseline_window_days: 7
+  heartbeat_interval_seconds: 30
+  max_monitored_agents: 50               # Per sentinel instance
+  session_snapshot_retention_days: 30
+  auto_baseline_refresh: true
+  baseline_refresh_interval_days: 7
+
+  capability_manifest_path: "agents/manifests/"
+  # Each monitored agent must have a corresponding YAML manifest
+  # in this directory: agents/manifests/{agent_id}.yaml
+
+# ============================================================
+# HUNT-001: AGENTIC LOOP DETECTION
+# ============================================================
+hunt_001:
+  enabled: true
+
+  step_count:
+    max_iterations: 25                   # Hard ceiling on agent planning steps per session
+    action_on_breach: "quarantine"       # throttle | quarantine | alert_only
+
+  tool_call_repetition:
+    repeat_threshold: 3                  # Identical call signatures before alert
+    window_seconds: 300                  # Evaluation window
+    action_on_breach: "quarantine"
+
+  token_velocity:
+    baseline_multiplier: 5.0            # Alert when current TPM > 5x 7-day baseline
+    evaluation_window_seconds: 60
+    action_on_breach: "throttle"
+
+  sub_agent_depth:
+    max_depth: 4                         # Maximum parent-child agent nesting depth
+    action_on_breach: "terminate_chain"
+
+  session_budget:
+    max_tokens_per_session: 500000       # Hard token ceiling per agent session
+    action_on_breach: "throttle"
+
+  compute_utilization:
+    cpu_threshold_percent: 90
+    sustained_duration_seconds: 120      # Must be sustained to trigger alert
+    action_on_breach: "alert"
+
+# ============================================================
+# HUNT-002: DDI TUNNELING ANOMALY
+# ============================================================
+hunt_002:
+  enabled: true
+
+  dns_query_analysis:
+    length_threshold_chars: 52           # Flag queries with total FQDN length > threshold
+    entropy_threshold_bits: 3.5          # Shannon entropy threshold for subdomain label
+    base64_pattern_detection: true       # Flag Base64-pattern subdomains
+    combined_flag_threshold: 2           # Number of flags required to trigger Critical alert
+    action_on_critical: "block_and_alert"
+    action_on_single_flag: "alert"
+
+  nxdomain:
+    rate_threshold_percent: 40           # Alert when NXDOMAIN > 40% of session queries
+    evaluation_window_minutes: 10
+    action_on_breach: "alert"
+
+  query_concentration:
+    single_domain_threshold_percent: 60  # Alert when >60% of queries target one domain
+    evaluation_window_minutes: 10
+    action_on_breach: "alert"
+
+  txt_record_abuse:
+    rate_threshold_per_minute: 20        # TXT record queries per minute per agent namespace
+    action_on_breach: "alert"
+
+  beaconing_detection:
+    coefficient_of_variation_threshold: 0.05   # CV < 0.05 indicates machine-regular timing
+    minimum_sample_count: 10
+    action_on_breach: "alert_and_isolate"
+
+  dhcp:
+    enabled: true
+    anomalous_request_multiplier: 3.0   # Alert when DHCP request rate > 3x baseline
+    flag_identifier_anomalies: true
+
+  ipam:
+    enabled: true
+    flag_unauthorized_range_queries: true
+    flag_unexpected_lease_registrations: true
+
+  response_actions:
+    block_flagged_domain: true
+    isolate_agent_namespace: true
+    capture_pcap_window_minutes: 60
+    revoke_session_credentials: true
+
+# ============================================================
+# HUNT-003: MODEL POISONING BASELINE
+# ============================================================
+hunt_003:
+  enabled: true
+
+  behavioral_drift:
+    drift_threshold_medium: 0.08
+    drift_threshold_high: 0.12
+    drift_threshold_critical: 0.20
+    action_on_medium: "alert"
+    action_on_high: "alert_and_expand_probes"
+    action_on_critical: "rollback_and_quarantine"
+    embedding_model: "text-embedding-3-small"
+
+  probe_evaluation:
+    schedule: "daily"                    # daily | weekly | on_model_update
+    probe_set_version: "v1"
+    expanded_probe_threshold: 0.12       # Drift score that triggers expanded 200-probe evaluation
+    fixed_temperature: 0.0               # Always evaluate probes at temperature 0 for consistency
+    fixed_top_p: 1.0
+
+  checkpoint_integrity:
+    enabled: true
+    hash_algorithm: "sha256"
+    registry_path: "baselines/model-registry.json"
+    action_on_mismatch: "critical_alert_and_remove_from_routing"
+
+  rag_poisoning:
+    enabled: true
+    instruction_centroid_path: "baselines/instruction-centroid.npy"
+    similarity_threshold: 0.80
+    action_on_suspected_poison: "quarantine_document_and_alert"
+    scan_on_ingest: true                 # Apply scan before documents are written to vector store
+
+  refusal_rate:
+    baseline_window_days: 30            # Longer window needed for stable refusal rate baseline
+    change_threshold_percent: 15
+    action_on_breach: "alert"
+
+  supply_chain:
+    flag_unexpected_capabilities: true
+    capability_evaluation_on_update: true
+    baseline_capability_report_path: "baselines/capability-reports/"
+
+# ============================================================
+# HUNT-004: ROGUE AGENT DETECTION
+# ============================================================
+hunt_004:
+  enabled: true
+
+  tool_call_validation:
+    enforce_capability_manifest: true
+    block_on_manifest_violation: true
+    action_on_violation: "block_and_alert"
+
+  invocation_frequency:
+    window_seconds: 60
+    threshold_multiplier: 3.0           # Alert when frequency > 3x 7-day baseline
+    action_on_breach: "quarantine"
+
+  parameter_inspection:
+    path_traversal_detection: true
+    credential_pattern_scan: true       # Detect API key and token patterns in parameters
+    encoding_scheme_detection: true     # Detect Base64, hex encoding in string parameters
+    action_on_match: "block_and_alert"
+
+  context_window_analysis:
+    injection_similarity_threshold: 0.82
+    embedding_model: "text-embedding-3-small"
+    action_on_match: "alert_and_log"
+    log_full_context_snapshot: true
+
+  outbound_egress:
+    enforce_allowlist: true
+    allowlist_path: "configs/egress-allowlist.yaml"
+    action_on_violation: "block_and_alert"
+
+  sub_agent_spawning:
+    enabled: true
+    max_depth: 4
+    require_explicit_authorization: true
+    action_on_unauthorized_spawn: "terminate_and_alert"
+
+  credential_access:
+    monitor_env_variable_access: true
+    monitor_secrets_manager_calls: true
+    monitor_config_file_reads: true
+    action_on_detection: "block_and_critical_alert"
+
+  data_volume:
+    read_volume_multiplier: 10.0        # Alert when data read volume > 10x baseline for task type
+    transmit_volume_multiplier: 5.0
+    action_on_breach: "throttle_and_alert"
+
+  response_actions:
+    quarantine_session_on_violation: true
+    preserve_context_window_snapshot: true
+    revoke_session_credentials: true
+    emit_siem_alert: true
+
+# ============================================================
+# ZERO-TRUST LOGIC VALIDATION (ZTLV) GATE
+# ============================================================
+ztlv:
+  enabled: true
+  default_posture: "deny"              # deny | allow
+  # deny: Block any tool call not explicitly permitted by manifest
+  # allow: Permit any tool call not explicitly prohibited
+
+  evaluation_order:
+    - capability_manifest
+    - parameter_inspection
+    - data_namespace_scope
+    - outbound_egress
+    - invocation_frequency
+    - semantic_inspection
+
+  audit_log:
+    enabled: true
+    log_permitted_calls: false          # Set true for debugging; high volume in production
+    log_blocked_calls: true
+    log_path: "logs/ztlv-audit.jsonl"
+
+  enforcement_exceptions:
+    # Document approved exceptions here. Each exception requires human authorization.
+    # Format:
+    # - agent_id: "agent-01"
+    #   tool: "payment_api"
+    #   reason: "Approved for billing agent 2026-02-15"
+    #   authorized_by: ""
+    #   expiry: "2026-08-15"
+    exceptions: []
+
+# ============================================================
+# DDI-AI FUSION TELEMETRY
+# ============================================================
+ddi_fusion:
+  enabled: true
+
+  dns:
+    log_source: "syslog"               # syslog | api | file
+    log_path: "/var/log/ddi/dns_query.log"
+    streaming_mode: true               # true for real-time; false for batch
+    batch_interval_seconds: 60
+
+  dhcp:
+    enabled: true
+    log_path: "/var/log/ddi/dhcp_transactions.log"
+
+  ipam:
+    enabled: true
+    api_endpoint: ""                   # Set to your IPAM platform API endpoint
+    poll_interval_seconds: 300
+
+  namespace_mapping:
+    # Map agent process identifiers to their network namespaces
+    # Format:
+    # - agent_id: "agent-01"
+    #   namespace: "agent-ns-01"
+    #   container_id: ""
+    mappings: []
+
+  reputation_feeds:
+    enabled: true
+    feeds:
+      - name: "abuse_ch"
+        url: "https://urlhaus.abuse.ch/downloads/json/"
+        refresh_interval_hours: 6
+      - name: "threatfox"
+        url: "https://threatfox-api.abuse.ch/api/v1/"
+        refresh_interval_hours: 6
+
+# ============================================================
+# ALERTING AND SIEM OUTPUT
+# ============================================================
+alerting:
+  siem_output:
+    enabled: true
+    format: "json"
+    destination: "syslog"              # syslog | splunk_hec | elastic | webhook
+    endpoint: ""                       # Set for Splunk HEC, Elastic, or webhook destinations
+    syslog_host: "localhost"
+    syslog_port: 514
+    syslog_protocol: "UDP"             # UDP | TCP | TLS
+
+  alert_fields:
+    # Standard fields included in every GSH alert
+    - agent_id
+    - session_id
+    - playbook_id
+    - violation_type
+    - severity
+    - timestamp
+    - details
+    - recommended_action
+
+  severity_levels:
+    critical_pagerduty: true           # Page on-call for Critical severity alerts
+    high_email: true                   # Email SOC team for High severity alerts
+    medium_ticket: true                # Create ITSM ticket for Medium severity alerts
+    low_log_only: true                 # Log only for Low severity
+
+  suppression:
+    # Suppress repeated identical alerts within this window to prevent alert fatigue
+    window_seconds: 300
+    max_identical_alerts: 3
+
+# ============================================================
+# EGRESS ALLOWLIST
+# ============================================================
+# Move to configs/egress-allowlist.yaml for production deployments.
+# Defined here as a starting reference.
+egress_allowlist:
+  # Format: domain or IP CIDR
+  domains:
+    # OpenAI / Azure OpenAI
+    - "api.openai.com"
+    - "*.openai.azure.com"
+    # AWS Bedrock
+    - "bedrock.*.amazonaws.com"
+    - "bedrock-runtime.*.amazonaws.com"
+    # Anthropic
+    - "api.anthropic.com"
+    # Google Vertex AI
+    - "*.googleapis.com"
+    # Pinecone (vector store)
+    - "*.pinecone.io"
+    # Weaviate Cloud
+    - "*.weaviate.network"
+    # Add your organization's approved endpoints below
+  custom_endpoints: []
