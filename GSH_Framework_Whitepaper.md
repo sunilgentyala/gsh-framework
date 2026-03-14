@@ -3,7 +3,7 @@
 **Author:** Sunil Gentyala  
 Lead Cybersecurity and AI Security Consultant, HCLTech  
 IEEE Senior Member (#101760715) | Cloud Security Alliance Representative  
-sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com  
+sunil.gentyala@ieee.org | sunil.gentyala@hotmail.com  
 ORCID: 0009-0005-2642-3479  
 
 ---
