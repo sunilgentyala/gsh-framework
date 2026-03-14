@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0-beta  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  
-**Contact:** sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com  
+**Contact:** sunil.gentyala@ieee.org | sunil.gentyala@hotmail.com  
 **License:** See [LICENSE](LICENSE)
 
 ---
