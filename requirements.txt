@@ -1,0 +1,51 @@
+# Gentyala-Sovereign Hunt (GSH) Framework
+# Python Dependencies - v1.0.0-beta
+#
+# Core dependencies are intentionally minimal.
+# The framework ships with stdlib-only fallbacks for all optional packages.
+#
+# Install all dependencies:
+#   pip install -r requirements.txt
+#
+# Minimal install (stdlib fallbacks only, no LLM SDK):
+#   pip install pyyaml
+
+# ---------------------------------------------------------------------------
+# Required
+# ---------------------------------------------------------------------------
+
+# YAML policy file parsing (sentinel-policy-default.yaml)
+pyyaml>=6.0.1
+
+# ---------------------------------------------------------------------------
+# Optional - LLM endpoint integration
+# ---------------------------------------------------------------------------
+
+# OpenAI-compatible endpoint client (gsh-probe-eval.py)
+# Works with OpenAI, Azure OpenAI, Ollama, LM Studio, and other local servers.
+# If not installed, gsh-probe-eval.py falls back to stdlib urllib.
+openai>=1.30.0
+
+# ---------------------------------------------------------------------------
+# Optional - Enhanced analysis and output
+# ---------------------------------------------------------------------------
+
+# Richer statistical analysis for behavioral baselining
+# If not installed, the framework uses built-in pure-Python implementations.
+numpy>=1.26.0
+
+# HTTP request library (used by optional SIEM/webhook integrations)
+requests>=2.31.0
+
+# ---------------------------------------------------------------------------
+# Optional - Development and testing
+# ---------------------------------------------------------------------------
+
+# Unit testing
+pytest>=8.0.0
+
+# Code formatting
+black>=24.0.0
+
+# Type checking
+mypy>=1.10.0
