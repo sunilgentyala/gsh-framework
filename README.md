@@ -34,7 +34,7 @@ GSH addresses a fundamental gap in the current security tooling landscape: exist
 | [Hunt-001](playbooks/hunt-001-agentic-loop-detection.md) | Agentic Loop / Resource Exhaustion | High |
 | [Hunt-002](playbooks/hunt-002-ddi-tunneling-anomaly.md) | DDI Covert Channel / C2 via DNS | Critical |
 | [Hunt-003](playbooks/hunt-003-model-poisoning-baseline.md) | ML Model Poisoning / Behavioral Drift | Critical |
-| [Hunt-004]|((playbooks/hunt-003-model-agent-detection.md) | Rogue Agent Detection | Critical |
+| [Hunt-004](playbooks/hunt-004-model-agent-detection.md) | Rogue Agent Detection | Critical |
 
 ---
 
