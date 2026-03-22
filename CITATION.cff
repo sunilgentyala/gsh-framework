@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use the GSH Framework in your research, please cite it as below."
+type: software
+authors:
+  - family-names: Gentyala
+    given-names: Sunil
+    orcid: https://orcid.org/0009-0005-2642-3479
+    affiliation: "HCLTech (HCL America)"
+    email: sunil.gentyala@ieee.org
+title: "The Gentyala-Sovereign Hunt (GSH) Framework: Autonomous
+  Agentic AI Threat Hunting for the Cognitive Cyber Domain"
+version: 1.0.0-beta
+date-released: "2026-01-15"
+license: MIT
+url: "https://github.com/sunilgentyala/gsh-framework"
+keywords:
+  - agentic AI security
+  - threat hunting
+  - MITRE ATLAS
+  - LLM security
+  - zero trust
+  - NIST CSF 2.0
