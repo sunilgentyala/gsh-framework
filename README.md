@@ -145,6 +145,7 @@ If you use the GSH framework in your research, please cite:
 
 To report a security vulnerability in the GSH framework itself, please email sunil.gentyala@ieee.org with the subject line `[GSH Security Vulnerability] — [brief description]`. Do not open a public GitHub Issue. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full responsible disclosure policy.
 
+
 ---
 
 ## License
