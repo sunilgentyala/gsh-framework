@@ -37,9 +37,9 @@ All detection signals are mapped to MITRE ATLAS and NIST CSF 2.0, giving practit
 
 | Playbook | Threat Class | Severity | Status |
 |---|---|---|---|
-| [Hunt-001](https://github.com/sunilgentyala/gsh-framework/blob/main/hunt-001-agentic-loop-detection.md) | Agentic Loop / Resource Exhaustion | High | Active |
-| [Hunt-002](https://github.com/sunilgentyala/gsh-framework/blob/main/hunt-002-ddi-tunneling-anomaly.md) | DDI Covert Channel / C2 via DNS | Critical | Active |
-| [Hunt-003](https://github.com/sunilgentyala/gsh-framework/blob/main/hunt-003-model-poisoning-baseline.md) | ML Model Poisoning / Behavioral Drift | Critical | Active |
+| [Hunt-001](https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-001-agentic-loop-detection.md) | Agentic Loop / Resource Exhaustion | High | Active |
+| [Hunt-002](https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-002-ddi-tunneling-anomaly.md) | DDI Covert Channel / C2 via DNS | Critical | Active |
+| [Hunt-003](https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-003-model-poisoning-baseline.md) | ML Model Poisoning / Behavioral Drift | Critical | Active |
 | Hunt-004 | Rogue Agent / Unauthorized Tool Use | Critical | Coming Soon |
 
 ---
