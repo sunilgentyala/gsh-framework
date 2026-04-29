@@ -40,7 +40,7 @@ All detection signals are mapped to MITRE ATLAS and NIST CSF 2.0, giving practit
 | [Hunt-001](hunt-001-agentic-loop-detection.md) | Agentic Loop / Resource Exhaustion | High | Active |
 | [Hunt-002](hunt-002-ddi-tunneling-anomaly.md) | DDI Covert Channel / C2 via DNS | Critical | Active |
 | [Hunt-003](hunt-003-model-poisoning-baseline.md) | ML Model Poisoning / Behavioral Drift | Critical | Active |
-| Hunt-004 | Rogue Agent / Unauthorized Tool Use | Critical | Coming Soon |
+| Hunt-004 |(playbooks/hunt-004-rogue-agent-detection.md) | Critical | Coming Soon |
 
 ---
 
