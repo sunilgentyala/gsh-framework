@@ -1,4 +1,4 @@
-# The Gentyala-Sovereign Hunt (GSH): An Autonomous Agentic Framework for Defending the Cognitive Cyber Domain
+# The Governed Security Hunting (GSH): An Autonomous Agentic Framework for Defending the Cognitive Cyber Domain
 
 **Author:** Sunil Gentyala  
 Lead Cybersecurity and AI Security Consultant, HCLTech  
@@ -10,7 +10,7 @@ ORCID: 0009-0005-2642-3479
 
 ## Abstract
 
-The rapid proliferation of non-deterministic, generative AI agents has exposed a fundamental gap in traditional, reactive threat-hunting frameworks, which were designed for human-to-system interaction models and cannot operate at the latency, scale, or non-determinism of AI-to-AI ecosystems. This paper introduces the Gentyala-Sovereign Hunt (GSH), an architectural framework that transitions cyber defense from human-led hypothesis testing to Autonomous Agentic Hunting. Building upon the author's previously established Sentinel Intelligence (SI) model, the GSH framework integrates DDI-AI Fusion (DNS, DHCP, IPAM) with Agentic RAG security to create a self-healing, continuous defense loop.
+The rapid proliferation of non-deterministic, generative AI agents has exposed a fundamental gap in traditional, reactive threat-hunting frameworks, which were designed for human-to-system interaction models and cannot operate at the latency, scale, or non-determinism of AI-to-AI ecosystems. This paper introduces the Governed Security Hunting (GSH), an architectural framework that transitions cyber defense from human-led hypothesis testing to Autonomous Agentic Hunting. Building upon the author's previously established Sentinel Intelligence (SI) model, the GSH framework integrates DDI-AI Fusion (DNS, DHCP, IPAM) with Agentic RAG security to create a self-healing, continuous defense loop.
 
 Unlike the static PEAK or TaHiTI models, GSH deploys Sovereign Sentinels: specialized AI agents that perform continuous, non-deterministic micro-hunts within distributed and service-mesh environments. The framework specifically addresses emerging threats in the Era of the Agent by introducing Cognitive Red Teaming and Zero-Trust Logic Validation to intercept prompt injection and model poisoning at machine speed. Architectural modeling and threat simulation suggest significant reductions in Mean Time to Detect (MTTD) for agentic threat classes, providing a scalable blueprint for sovereign security across advanced multi-agent AI deployments.
 
@@ -22,7 +22,7 @@ The deployment of autonomous AI agents across enterprise environments has introd
 
 The Year of the Agent — characterized by the widespread adoption of autonomous, tool-using, memory-enabled AI systems — demands a corresponding evolution in defensive architecture. When a rogue AI agent exfiltrates data through DNS subdomain encoding, it does so at machine speed across thousands of queries. When a poisoned model backdoor activates, it does so silently, identically, across every session that presents the trigger. No human-paced hunting cycle can intercept these events at the moment of impact.
 
-This paper proposes the Gentyala-Sovereign Hunt (GSH) framework as a direct architectural response to this gap. GSH is not an incremental extension of existing frameworks. It is a ground-up redesign of the threat-hunting function for environments where the threat actor, the attack surface, and the defender are all AI systems. The framework's core innovation, the Sovereign Sentinel, is an AI hunting agent that operates continuously within the service mesh, monitoring peer agents and enforcing zero-trust behavioral boundaries at the tool invocation layer.
+This paper proposes the Governed Security Hunting (GSH) framework as a direct architectural response to this gap. GSH is not an incremental extension of existing frameworks. It is a ground-up redesign of the threat-hunting function for environments where the threat actor, the attack surface, and the defender are all AI systems. The framework's core innovation, the Sovereign Sentinel, is an AI hunting agent that operates continuously within the service mesh, monitoring peer agents and enforcing zero-trust behavioral boundaries at the tool invocation layer.
 
 ### 1.1 Scope
 
@@ -266,7 +266,7 @@ Future development of the GSH framework will address:
 
 ## 8. Conclusion
 
-The proliferation of autonomous AI agents has created an asymmetry between the speed of agentic threats and the speed of human-led threat hunting that existing frameworks cannot close. The Gentyala-Sovereign Hunt framework addresses this asymmetry directly by deploying AI agents as defenders: Sovereign Sentinels that operate at the same speed and within the same architectural layer as the threats they hunt.
+The proliferation of autonomous AI agents has created an asymmetry between the speed of agentic threats and the speed of human-led threat hunting that existing frameworks cannot close. The Governed Security Hunting framework addresses this asymmetry directly by deploying AI agents as defenders: Sovereign Sentinels that operate at the same speed and within the same architectural layer as the threats they hunt.
 
 The framework's three core innovations — DDI-AI Fusion, Zero-Trust Logic Validation, and Cognitive Red Teaming — combine to create a defense posture that is continuous, behavioral, and architecturally native to the agentic AI environment. The accompanying open-source playbook suite provides security practitioners with immediately deployable detection logic for the four most critical agentic threat classes.
 

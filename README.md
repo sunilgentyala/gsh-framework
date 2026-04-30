@@ -1,5 +1,5 @@
 
-# Gentyala-Sovereign Hunt (GSH) Framework
+# Governed Security Hunting (GSH) Framework
 
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0--beta-orange)](https://github.com/sunilgentyala/gsh-framework)
@@ -125,7 +125,7 @@ If you use the GSH Framework in your research, please cite:
 ```bibtex
 @misc{gentyala2026gsh,
   author       = {Gentyala, Sunil},
-  title        = {The Gentyala-Sovereign Hunt (GSH): An Autonomous Agentic Framework
+  title        = {The Governed Security Hunting (GSH): An Autonomous Agentic Framework
                   for Defending the Cognitive Cyber Domain},
   year         = {2026},
   howpublished = {Open Source Research Artifact, GitHub},

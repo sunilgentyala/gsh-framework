@@ -1,6 +1,6 @@
 # GSH Hunt Playbook 001 — Agentic Loop Detection
 
-**Framework:** Gentyala-Sovereign Hunt (GSH) v1.0.0-beta  
+**Framework:** Governed Security Hunting (GSH) v1.0.0-beta  
 **Threat Class:** Autonomous Agent Resource Exhaustion / Infinite Execution Loop  
 **Severity:** High  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  

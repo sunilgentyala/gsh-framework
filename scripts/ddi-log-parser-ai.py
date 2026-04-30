@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ddi-log-parser-ai.py
-Gentyala-Sovereign Hunt (GSH) Framework
+Governed Security Hunting (GSH) Framework
 DNS/DHCP/IPAM (DDI) Log Parser with AI Agent Anomaly Detection
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech

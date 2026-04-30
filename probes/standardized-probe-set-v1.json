@@ -2,7 +2,7 @@
   "schema": "GSH-ProbeSet-v1",
   "framework": "GSH",
   "version": "1.0.0",
-  "description": "Gentyala-Sovereign Hunt (GSH) Framework standardized probe set for LLM behavioral baselining and model poisoning detection. Maps to Hunt-003, MITRE ATLAS AML.T0020/AML.T0043/AML.T0044, NIST CSF 2.0 ID.RA-01/DE.AE-02/DE.CM-06.",
+  "description": "Governed Security Hunting (GSH) Framework standardized probe set for LLM behavioral baselining and model poisoning detection. Maps to Hunt-003, MITRE ATLAS AML.T0020/AML.T0043/AML.T0044, NIST CSF 2.0 ID.RA-01/DE.AE-02/DE.CM-06.",
   "author": "Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech",
   "contact": "sunil.gentyala@ieee.org",
   "last_updated": "2026-03-01",

@@ -1,4 +1,4 @@
-# Contributing to the Gentyala-Sovereign Hunt (GSH) Framework
+# Contributing to the Governed Security Hunting (GSH) Framework
 
 Thank you for your interest in contributing to the GSH framework. This project is an open-source research artifact designed to advance the practice of agentic AI threat hunting. Contributions from security practitioners, AI safety researchers, and detection engineers are welcome and encouraged.
 
@@ -246,7 +246,7 @@ If you use the GSH framework, its playbooks, or its detection logic in your rese
 ```bibtex
 @misc{gentyala2026gsh,
   author       = {Gentyala, Sunil},
-  title        = {The Gentyala-Sovereign Hunt (GSH): An Autonomous Agentic Framework
+  title        = {The Governed Security Hunting (GSH): An Autonomous Agentic Framework
                   for Defending the Cognitive Cyber Domain},
   year         = {2026},
   howpublished = {Open Source Research Artifact, GitHub},

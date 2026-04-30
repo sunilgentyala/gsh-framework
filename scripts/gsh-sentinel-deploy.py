@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 gsh-sentinel-deploy.py
-Gentyala-Sovereign Hunt (GSH) Framework
+Governed Security Hunting (GSH) Framework
 Sovereign Sentinel Deployment and Enforcement Engine
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
@@ -625,7 +625,7 @@ def main() -> int:
     output_dir = args.output
 
     logger.info("=" * 72)
-    logger.info("  Gentyala-Sovereign Hunt (GSH) Framework v1.0.0-beta")
+    logger.info("  Governed Security Hunting (GSH) Framework v1.0.0-beta")
     logger.info("  Sovereign Sentinel Deployment Engine")
     logger.info(f"  Session ID : {session_id}")
     logger.info(f"  Target     : {args.target}")

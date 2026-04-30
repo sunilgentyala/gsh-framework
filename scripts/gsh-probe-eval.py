@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 gsh-probe-eval.py
-Gentyala-Sovereign Hunt (GSH) Framework
+Governed Security Hunting (GSH) Framework
 Behavioral Baseline Probe Evaluation Engine
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech

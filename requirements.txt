@@ -1,4 +1,4 @@
-# Gentyala-Sovereign Hunt (GSH) Framework
+# Governed Security Hunting (GSH) Framework
 # Python Dependencies - v1.0.0-beta
 #
 # Core dependencies are intentionally minimal.
