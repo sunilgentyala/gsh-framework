@@ -33,6 +33,8 @@ The hunt playbooks, detection logic, thresholds, and policy schema are complete 
 
 **SIEM output** (`adapters/splunk_hec.py`, `adapters/elastic_bulk.py`) is also real: set `siem_output: splunk` or `siem_output: elastic` in your policy YAML (see `configs/sentinel-policy-default.yaml`) and both `gsh-sentinel-deploy.py` and `gsh-mcp-proxy.py` will send findings there via real HTTP requests (Splunk HEC / Elasticsearch `_bulk`). A failed or unconfigured send always falls back to local file output - a finding is never silently dropped. See `tests/test_siem_adapters.py`.
 
+**LangChain telemetry** (`adapters/langchain_callback.py`) is a third real integration: `GSHCallbackHandler` attaches to any LangChain `Runnable`/agent via `config={"callbacks": [handler]}` and evaluates real tool-call rate, token velocity, unauthorized-tool invocations, and suspicious call parameters against Hunt-001/Hunt-004 thresholds - no synthetic data. **Important limitation:** LangChain callback handlers are notification hooks, not gates - by default LangChain swallows exceptions raised inside a callback rather than stopping the tool call, so this adapter can only alert, never block. Every finding it emits is explicitly marked `enforcement_mode: "alert_only"` and `action_taken: "ALERTED"`, regardless of policy mode. It also has no visibility into DNS queries (Hunt-002). See `tests/test_langchain_callback.py`, tested against `langchain-core` 1.4.x.
+
 See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for remaining integrations (LangChain callback adapter, Windows Event Log, SARIF reporting) and the Docker Compose demo.
 
 ---
@@ -116,7 +118,30 @@ python scripts/gsh-mcp-proxy.py \
 
 The proxy will alert on (or, in `--mode aggressive`, block) definition drift, poisoned tool descriptions, invisible Unicode content, and unauthorized tool calls. See `playbooks/hunt-005-mcp-tool-poisoning.md` for the full detection logic.
 
-### 5. Run a Hunt Playbook
+### 5. Wire a LangChain Agent to a Sentinel (real telemetry, alert-only)
+
+```bash
+pip install langchain-core
+```
+
+```python
+from adapters.langchain_callback import GSHCallbackHandler
+
+handler = GSHCallbackHandler(
+    target="my-langchain-agent",
+    allowlist=["web_search", "calculator"],   # unlisted tools trigger an immediate alert
+)
+
+# Attach to any LLM, tool, or chain via the standard LangChain callbacks config:
+llm.invoke(prompt, config={"callbacks": [handler]})
+my_tool.invoke(args, config={"callbacks": [handler]})
+
+handler.flush()  # evaluate any partial window at the end of a run
+```
+
+This is alert-only, not enforcement - see `adapters/langchain_callback.py`'s module docstring for why LangChain callback handlers cannot reliably block a tool call.
+
+### 6. Run a Hunt Playbook
 
 Each playbook is a self-contained Markdown document with detection logic, data sources, MITRE ATLAS mapping, triage decision tree, and response actions. Start with Hunt-001 for loop detection:
 
@@ -142,7 +167,11 @@ gsh-framework/
 ├── CONTRIBUTING.md
 ├── requirements.txt
 ├── adapters/
-│   └── mcp_proxy.py                # Real MCP JSON-RPC proxy (Hunt-005)
+│   ├── mcp_proxy.py                 # Real MCP JSON-RPC proxy (Hunt-005)
+│   ├── langchain_callback.py        # Real LangChain telemetry, alert-only (Hunt-001/004)
+│   ├── splunk_hec.py                # Real Splunk HTTP Event Collector output
+│   ├── elastic_bulk.py              # Real Elasticsearch/OpenSearch _bulk output
+│   └── siem_dispatch.py             # Shared dispatcher used by both SIEM adapters
 ├── configs/
 │   └── sentinel-policy-default.yaml
 ├── docs/
@@ -162,8 +191,11 @@ gsh-framework/
 │   └── gsh-sentinel-deploy.py
 ├── tests/
 │   ├── test_mcp_proxy.py
+│   ├── test_siem_adapters.py
+│   ├── test_langchain_callback.py
 │   └── fixtures/
-│       └── mock_mcp_server.py      # Minimal MCP stdio server for testing
+│       ├── mock_mcp_server.py      # Minimal MCP stdio server for testing
+│       └── mock_http_sink.py       # Minimal HTTP server for testing SIEM adapters
 ├── baselines/
 └── reports/
 ```

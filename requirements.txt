@@ -41,6 +41,16 @@ numpy>=1.26.0
 requests>=2.31.0
 
 # ---------------------------------------------------------------------------
+# Optional - Agent framework integration
+# ---------------------------------------------------------------------------
+
+# Required only if you use adapters/langchain_callback.py (GSHCallbackHandler)
+# to feed real LangChain agent telemetry into a Sentinel, instead of the
+# synthetic generator in gsh-sentinel-deploy.py. Tested against 1.4.x.
+# Not required for any other part of the framework.
+langchain-core>=0.3.0
+
+# ---------------------------------------------------------------------------
 # Optional - Development and testing
 # ---------------------------------------------------------------------------
 
