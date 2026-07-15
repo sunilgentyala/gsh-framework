@@ -1,6 +1,6 @@
 # GSH Hunt Playbook 002 - DDI Tunneling Anomaly Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.3.0  
+**Framework:** Governed Security Hunting (GSH) v1.4.0  
 **Threat Class:** Covert Command-and-Control via DNS/DHCP/IPAM (DDI) Exfiltration  
 **Severity:** Critical  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  

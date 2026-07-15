@@ -6,7 +6,7 @@ MCP Runtime Adapter - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.3.0
+Version: 1.4.0
 License: See LICENSE
 
 Description:
@@ -169,7 +169,7 @@ def main() -> int:
     # This process's own stdout is reserved for MCP JSON-RPC traffic back to
     # the host; all proxy logging goes to stderr (see logging.basicConfig above).
     logger.info("=" * 72)
-    logger.info("  GSH Framework v1.3.0 - MCP Runtime Adapter")
+    logger.info("  GSH Framework v1.4.0 - MCP Runtime Adapter")
     logger.info("  Hunt-005: MCP Supply Chain & Tool Poisoning")
     logger.info(f"  Server ID : {args.server_id}")
     logger.info(f"  Mode      : {args.mode.upper()}")

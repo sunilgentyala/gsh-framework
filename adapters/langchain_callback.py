@@ -5,7 +5,7 @@ LangChain Callback Adapter - Real Telemetry for Hunt-001 and Hunt-004
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.4.0-dev
+Version: 1.4.0
 License: See LICENSE
 
 Description:

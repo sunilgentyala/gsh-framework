@@ -5,7 +5,7 @@ Elasticsearch/OpenSearch Bulk Output Adapter
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.3.0
+Version: 1.4.0
 License: See LICENSE
 
 Description:

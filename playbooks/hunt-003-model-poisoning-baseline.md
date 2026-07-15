@@ -1,6 +1,6 @@
 # GSH Hunt Playbook 003 - Model Poisoning and Behavioral Drift Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.3.0  
+**Framework:** Governed Security Hunting (GSH) v1.4.0  
 **Threat Class:** ML Model Poisoning / Adversarial Behavioral Drift  
 **Severity:** Critical  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  
