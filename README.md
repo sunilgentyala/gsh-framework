@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.1.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
+[![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
 [![Website](https://img.shields.io/badge/website-live-blue)](https://sunilgentyala.github.io/gsh-framework/)
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
 [![NIST CSF](https://img.shields.io/badge/NIST-CSF%202.0-blue)](https://www.nist.gov/cyberframework)
@@ -85,13 +86,11 @@ Each playbook is a self-contained Markdown document with detection logic, data s
 cat playbooks/hunt-001-agentic-loop-detection.md
 ```
 
-### 5. Read the Whitepaper
+---
 
-The full technical rationale, design decisions, and threat model:
+## Research
 
-```bash
-cat docs/GSH_Framework_Whitepaper.md
-```
+A companion research paper covering the full technical rationale, design decisions, and threat model is in preparation and not yet submitted. Per publication policy, the manuscript is not included in this repository. For research inquiries, contact [sunil.gentyala@ieee.org](mailto:sunil.gentyala@ieee.org).
 
 ---
 
@@ -107,8 +106,7 @@ gsh-framework/
 ├── configs/
 │   └── sentinel-policy-default.yaml
 ├── docs/
-│   ├── index.html                  # Project website (GitHub Pages)
-│   └── GSH_Framework_Whitepaper.md
+│   └── index.html                  # Project website (GitHub Pages)
 ├── playbooks/
 │   ├── hunt-001-agentic-loop-detection.md
 │   ├── hunt-002-ddi-tunneling-anomaly.md

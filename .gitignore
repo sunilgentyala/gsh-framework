@@ -1,0 +1,6 @@
+# Papers, manuscripts, whitepapers stay local (prior-publication risk)
+paper/
+whitepaper/
+*.docx
+*.pdf
+*.tex
