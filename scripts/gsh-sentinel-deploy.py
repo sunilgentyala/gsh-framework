@@ -6,7 +6,7 @@ Sovereign Sentinel Deployment and Enforcement Engine
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.4.0
+Version: 1.5.0
 License: See LICENSE
 
 Description:
@@ -72,7 +72,7 @@ VALID_MODES = ("passive", "standard", "aggressive")
 
 DEFAULT_POLICY = {
     "organization": "default-org",
-    "sentinel_version": "1.4.0",
+    "sentinel_version": "1.5.0",
     "enforcement_mode": "standard",
     "siem_output": "stdout",
     "egress_allowlist": [],
@@ -162,7 +162,7 @@ def emit_event(event: dict, siem_output: str, output_dir: str, policy: dict | No
     response) falls back to local file output rather than silently
     dropping the finding.
     """
-    if siem_output in ("splunk", "elastic"):
+    if siem_output in ("splunk", "elastic", "windows_eventlog"):
         if dispatch_to_siem(event, siem_output, policy or {}):
             return
         logger.warning(
@@ -176,7 +176,7 @@ def emit_event(event: dict, siem_output: str, output_dir: str, policy: dict | No
         print(event_json)
     else:
         # "file" explicitly, or a fallback from an unknown/failed destination
-        if siem_output not in ("file", "splunk", "elastic"):
+        if siem_output not in ("file", "splunk", "elastic", "windows_eventlog"):
             logger.warning(f"Unknown SIEM output type '{siem_output}'. Falling back to file output.")
         output_path = Path(output_dir) / "sentinel-events.jsonl"
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -653,7 +653,7 @@ def main() -> int:
     output_dir = args.output
 
     logger.info("=" * 72)
-    logger.info("  Governed Security Hunting (GSH) Framework v1.4.0")
+    logger.info("  Governed Security Hunting (GSH) Framework v1.5.0")
     logger.info("  Sovereign Sentinel Deployment Engine")
     logger.info(f"  Session ID : {session_id}")
     logger.info(f"  Target     : {args.target}")

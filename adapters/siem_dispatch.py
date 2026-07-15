@@ -5,26 +5,29 @@ Shared SIEM Output Dispatch
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.4.0
+Version: 1.5.0
 License: See LICENSE
 
 Description:
     Both scripts/gsh-sentinel-deploy.py (Hunt-001-004) and
-    adapters/mcp_proxy.py (Hunt-005) need to send findings to Splunk or
-    Elastic when policy["siem_output"] is set accordingly. This module
-    wires the two real adapters (adapters/splunk_hec.py,
-    adapters/elastic_bulk.py) in exactly once rather than duplicating the
-    dispatch logic per caller.
+    adapters/mcp_proxy.py (Hunt-005) need to send findings to Splunk,
+    Elastic, or the local Windows Event Log when policy["siem_output"] is
+    set accordingly. This module wires the real adapters
+    (adapters/splunk_hec.py, adapters/elastic_bulk.py,
+    adapters/windows_eventlog.py) in exactly once rather than duplicating
+    the dispatch logic per caller.
 
     Adapter instances are cached per (destination, config) so a long-running
     Sentinel or proxy session reuses one Elastic buffer / one Splunk client
-    across many findings instead of reconnecting per event.
+    / one registered Event Log source across many findings instead of
+    reconnecting or re-registering per event.
 """
 
 import logging
 
 from adapters.elastic_bulk import ElasticBulkAdapter
 from adapters.splunk_hec import SplunkHECAdapter
+from adapters.windows_eventlog import WindowsEventLogAdapter
 
 logger = logging.getLogger("gsh-siem-dispatch")
 
@@ -34,6 +37,8 @@ _adapter_cache: dict = {}
 def _cache_key(kind: str, policy: dict) -> tuple:
     if kind == "splunk":
         return ("splunk", policy.get("splunk_hec_url", ""))
+    if kind == "windows_eventlog":
+        return ("windows_eventlog", policy.get("windows_eventlog_source", "GSH-Sentinel"))
     return ("elastic", policy.get("elastic_url", ""), policy.get("elastic_index", ""))
 
 
@@ -72,6 +77,17 @@ def dispatch_to_siem(finding: dict, siem_output: str, policy: dict) -> bool:
             )
             _adapter_cache[key] = adapter
         return adapter.add(finding)
+
+    if siem_output == "windows_eventlog":
+        key = _cache_key("windows_eventlog", policy)
+        adapter = _adapter_cache.get(key)
+        if adapter is None:
+            adapter = WindowsEventLogAdapter(
+                source=policy.get("windows_eventlog_source", "GSH-Sentinel"),
+                log_type=policy.get("windows_eventlog_type", "Application"),
+            )
+            _adapter_cache[key] = adapter
+        return adapter.send(finding)
 
     return False
 

@@ -1,5 +1,5 @@
 # Governed Security Hunting (GSH) Framework
-# Python Dependencies - v1.4.0
+# Python Dependencies - v1.5.0
 #
 # Core dependencies are intentionally minimal.
 # The framework ships with stdlib-only fallbacks for all optional packages.
@@ -39,6 +39,13 @@ numpy>=1.26.0
 # installed, siem_output: splunk|elastic logs a warning and falls back to
 # local file output.
 requests>=2.31.0
+
+# Windows Event Log output adapter (adapters/windows_eventlog.py). The
+# "; sys_platform == 'win32'" marker means pip skips this line entirely on
+# Linux/macOS, so `pip install -r requirements.txt` still succeeds there.
+# If not installed (or not on Windows), siem_output: windows_eventlog logs
+# a warning and falls back to local file output.
+pywin32>=306; sys_platform == "win32"
 
 # ---------------------------------------------------------------------------
 # Optional - Agent framework integration

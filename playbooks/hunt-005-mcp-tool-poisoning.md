@@ -1,6 +1,6 @@
 # GSH Hunt Playbook 005 - MCP Supply Chain and Tool Poisoning Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.4.0
+**Framework:** Governed Security Hunting (GSH) v1.5.0
 **Threat Class:** MCP Server Compromise / Tool Description Poisoning / Tool Definition Rug Pull
 **Severity:** Critical
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech

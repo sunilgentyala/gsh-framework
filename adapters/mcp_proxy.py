@@ -5,7 +5,7 @@ MCP Runtime Adapter - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.4.0
+Version: 1.5.0
 License: See LICENSE
 
 Description:
@@ -25,7 +25,7 @@ Description:
         - Basic parameter inspection (credential patterns, path
           traversal, suspicious encoding) reused from Hunt-004
 
-    Known limitations (v1.4.0):
+    Known limitations (v1.5.0):
         - Only the stdio transport is implemented (the most common local
           MCP transport). Streamable HTTP/SSE servers are not supported yet.
         - Canary comparison (playbook section 5.2, check 3) is not
@@ -35,11 +35,12 @@ Description:
           *definitions* and *invocations* are inspected. Adversarial
           return-payload content (playbook section 3.1, "invisible
           content" in results rather than definitions) is not scanned.
-        - Splunk/Elastic output requires the adapters in progress under
-          repo issues #5 and #7. Until those land, siem_output values
-          other than "stdout" or "file" log a warning and fall back to
-          stdout, matching the existing behavior in
-          scripts/gsh-sentinel-deploy.py's emit_event().
+
+    Real SIEM output (Splunk, Elastic, Windows Event Log) IS implemented -
+    see adapters/siem_dispatch.py, adapters/splunk_hec.py,
+    adapters/elastic_bulk.py, and adapters/windows_eventlog.py. Only
+    unrecognized or unconfigured siem_output values fall back to local
+    file output.
 """
 
 import hashlib
@@ -298,7 +299,7 @@ def emit_event(event: dict, siem_output: str, output_dir: str, policy: dict | No
     security alert should never vanish just because a SIEM integration
     is down.
     """
-    if siem_output in ("splunk", "elastic"):
+    if siem_output in ("splunk", "elastic", "windows_eventlog"):
         from adapters.siem_dispatch import dispatch_to_siem
         if dispatch_to_siem(event, siem_output, policy or {}):
             return
@@ -316,7 +317,7 @@ def emit_event(event: dict, siem_output: str, output_dir: str, policy: dict | No
         with open(output_path, "a") as f:
             f.write(event_json + "\n")
     else:
-        if siem_output not in ("splunk", "elastic"):
+        if siem_output not in ("splunk", "elastic", "windows_eventlog"):
             logger.warning(f"Unknown SIEM output type '{siem_output}'. Falling back to file output.")
         output_path = Path(output_dir) / "mcp-proxy-events.jsonl"
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -561,7 +562,7 @@ def connect_and_snapshot(server_cmd: list, server_id: str,
             "params": {
                 "protocolVersion": "2025-06-18",
                 "capabilities": {},
-                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.4.0"},
+                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.5.0"},
             },
         })
         init_response = _read_with_timeout(proc.stdout, timeout)

@@ -1,7 +1,7 @@
 # Governed Security Hunting (GSH) Framework
 
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
+[![Version](https://img.shields.io/badge/version-1.5.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
 [![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
 [![Website](https://img.shields.io/badge/website-live-blue)](https://sunilgentyala.github.io/gsh-framework/)
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
@@ -31,11 +31,26 @@ The hunt playbooks, detection logic, thresholds, and policy schema are complete 
 
 **Hunt-005** (`adapters/mcp_proxy.py`, `scripts/gsh-mcp-proxy.py`) is different: it is a real MCP JSON-RPC stdio proxy that intercepts *actual* tool definitions and tool calls between a real MCP host and a real MCP server - approval-time schema hashing, drift detection, semantic poisoning scans, and per-call enforcement (permit/alert/block) all run against live traffic, not synthetic data. See `tests/test_mcp_proxy.py` for a subprocess-driven end-to-end test of the CLI. Known gaps: canary/response-asymmetry comparison and tool-return-value scanning are not implemented yet (see `playbooks/hunt-005-mcp-tool-poisoning.md` section 5.2 for details), and only the stdio transport is supported (not streamable HTTP/SSE MCP servers).
 
-**SIEM output** (`adapters/splunk_hec.py`, `adapters/elastic_bulk.py`) is also real: set `siem_output: splunk` or `siem_output: elastic` in your policy YAML (see `configs/sentinel-policy-default.yaml`) and both `gsh-sentinel-deploy.py` and `gsh-mcp-proxy.py` will send findings there via real HTTP requests (Splunk HEC / Elasticsearch `_bulk`). A failed or unconfigured send always falls back to local file output - a finding is never silently dropped. See `tests/test_siem_adapters.py`.
+**SIEM output** (`adapters/splunk_hec.py`, `adapters/elastic_bulk.py`, `adapters/windows_eventlog.py`) is also real: set `siem_output: splunk`, `siem_output: elastic`, or `siem_output: windows_eventlog` in your policy YAML (see `configs/sentinel-policy-default.yaml`) and both `gsh-sentinel-deploy.py` and `gsh-mcp-proxy.py` will send findings there (Splunk HEC / Elasticsearch `_bulk` over real HTTP, or a registered source in the local Windows Application Event Log). A failed or unconfigured send always falls back to local file output - a finding is never silently dropped. The Windows Event Log adapter is Windows-only and requires `pywin32`; on any other platform (or without `pywin32`) it logs a warning and falls back like any other unconfigured destination. See `tests/test_siem_adapters.py` and `tests/test_windows_eventlog.py` (the latter includes a test that writes a real event and reads it back, not just a mocked one).
 
-**LangChain telemetry** (`adapters/langchain_callback.py`) is a third real integration: `GSHCallbackHandler` attaches to any LangChain `Runnable`/agent via `config={"callbacks": [handler]}` and evaluates real tool-call rate, token velocity, unauthorized-tool invocations, and suspicious call parameters against Hunt-001/Hunt-004 thresholds - no synthetic data. **Important limitation:** LangChain callback handlers are notification hooks, not gates - by default LangChain swallows exceptions raised inside a callback rather than stopping the tool call, so this adapter can only alert, never block. Every finding it emits is explicitly marked `enforcement_mode: "alert_only"` and `action_taken: "ALERTED"`, regardless of policy mode. It also has no visibility into DNS queries (Hunt-002). See `tests/test_langchain_callback.py`, tested against `langchain-core` 1.4.x.
+**LangChain telemetry** (`adapters/langchain_callback.py`) is a fourth real integration: `GSHCallbackHandler` attaches to any LangChain `Runnable`/agent via `config={"callbacks": [handler]}` and evaluates real tool-call rate, token velocity, unauthorized-tool invocations, and suspicious call parameters against Hunt-001/Hunt-004 thresholds - no synthetic data. **Important limitation:** LangChain callback handlers are notification hooks, not gates - by default LangChain swallows exceptions raised inside a callback rather than stopping the tool call, so this adapter can only alert, never block. Every finding it emits is explicitly marked `enforcement_mode: "alert_only"` and `action_taken: "ALERTED"`, regardless of policy mode. It also has no visibility into DNS queries (Hunt-002). See `tests/test_langchain_callback.py`, tested against `langchain-core` 1.4.x.
 
-See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for remaining integrations (LangChain callback adapter, Windows Event Log, SARIF reporting) and the Docker Compose demo.
+See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for remaining work (SARIF reporting, the Hunt-006 playbook, and the Docker Compose demo).
+
+---
+
+## Version History
+
+Full release notes (including known limitations at each release) are on the [Releases page](https://github.com/sunilgentyala/gsh-framework/releases). Summary:
+
+| Version | Highlights |
+|---|---|
+| [v1.5.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.5.0) | Real Windows Application Event Log output adapter (`adapters/windows_eventlog.py`); optional and Windows-only, safe no-op elsewhere |
+| [v1.4.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.4.0) | Real LangChain callback adapter (`adapters/langchain_callback.py`) for Hunt-001/Hunt-004 telemetry - alert-only by design, since LangChain callbacks cannot block a tool call |
+| [v1.3.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.3.0) | Real Splunk HEC and Elastic bulk SIEM output adapters, wired into both the Sentinel and the MCP proxy via a shared dispatcher; a failed/unconfigured SIEM send now always falls back to local file output |
+| [v1.2.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.2.0) | Real MCP JSON-RPC stdio proxy for Hunt-005 (`adapters/mcp_proxy.py`) - schema-hash drift detection, semantic poisoning scan, and real per-call enforcement against live MCP traffic, not simulated |
+| [v1.1.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.1.0) | Hunt-004 (rogue agent) completed; Hunt-005 (MCP supply chain / tool poisoning) added as a playbook; project website launched |
+| v1.0.0-beta | Initial public release: Hunt-001 through Hunt-003 playbooks, Sentinel reference scripts (synthetic telemetry), default policy schema |
 
 ---
 
@@ -171,7 +186,8 @@ gsh-framework/
 │   ├── langchain_callback.py        # Real LangChain telemetry, alert-only (Hunt-001/004)
 │   ├── splunk_hec.py                # Real Splunk HTTP Event Collector output
 │   ├── elastic_bulk.py              # Real Elasticsearch/OpenSearch _bulk output
-│   └── siem_dispatch.py             # Shared dispatcher used by both SIEM adapters
+│   ├── windows_eventlog.py          # Real Windows Application Event Log output
+│   └── siem_dispatch.py             # Shared dispatcher used by all three SIEM adapters
 ├── configs/
 │   └── sentinel-policy-default.yaml
 ├── docs/
@@ -192,6 +208,7 @@ gsh-framework/
 ├── tests/
 │   ├── test_mcp_proxy.py
 │   ├── test_siem_adapters.py
+│   ├── test_windows_eventlog.py
 │   ├── test_langchain_callback.py
 │   └── fixtures/
 │       ├── mock_mcp_server.py      # Minimal MCP stdio server for testing

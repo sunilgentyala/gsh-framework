@@ -1,6 +1,6 @@
 # GSH Hunt Playbook 004 - Rogue Agent Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.4.0
+**Framework:** Governed Security Hunting (GSH) v1.5.0
 **Threat Class:** Rogue Agent / Unauthorized Tool Use / Indirect Prompt Injection
 **Severity:** Critical
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech

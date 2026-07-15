@@ -1,7 +1,7 @@
 # ============================================================
 # Governed Security Hunting (GSH) Framework
 # Sovereign Sentinel Default Policy Configuration
-# Version: 1.4.0
+# Version: 1.5.0
 # Author: Sunil Gentyala <sunil.gentyala@ieee.org>
 # Last Updated: 2026-03-01
 #
@@ -24,7 +24,7 @@
 # ============================================================
 
 global:
-  framework_version: "1.4.0"
+  framework_version: "1.5.0"
   organization: ""                        # Set to your organization name
   environment: "production"               # production | staging | development
   log_level: "INFO"                       # DEBUG | INFO | WARN | ERROR
@@ -375,9 +375,9 @@ alerting:
 # ============================================================
 # REAL SIEM OUTPUT (flat keys, actually read by the scripts)
 # ============================================================
-# siem_output selects the destination: stdout | file | splunk | elastic
-# A failed or unconfigured splunk/elastic send always falls back to local
-# file output - a finding is never silently dropped.
+# siem_output selects the destination: stdout | file | splunk | elastic | windows_eventlog
+# A failed or unconfigured splunk/elastic/windows_eventlog send always
+# falls back to local file output - a finding is never silently dropped.
 siem_output: "file"
 
 # --- Splunk HTTP Event Collector (adapters/splunk_hec.py) ---
@@ -391,6 +391,14 @@ elastic_index: "gsh-findings"
 elastic_api_key: ""                      # prefer "${ELASTIC_API_KEY}" to read from an env var; never commit a real key
 elastic_flush_size: 1                    # findings buffered before an automatic flush (1 = send immediately)
 elastic_flush_interval_seconds: 5        # also flush after this many seconds, even if flush_size isn't reached
+
+# --- Windows Event Log (adapters/windows_eventlog.py) ---
+# Windows-only; requires pywin32. On any other platform, or if pywin32
+# isn't installed, this logs a warning and falls back to file output.
+# One-time source registration (win32evtlogutil.AddSourceToRegistry) may
+# require an elevated/administrator context on first write.
+windows_eventlog_source: "GSH-Sentinel"
+windows_eventlog_type: "Application"
 
 # ============================================================
 # EGRESS ALLOWLIST
