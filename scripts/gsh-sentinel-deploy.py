@@ -459,6 +459,11 @@ def run_passive_mode(target: str, policy: dict, window_seconds: int,
     LLM gateway (e.g., OpenAI usage logs, LangChain callbacks, API gateway metrics).
     """
     logger.info(f"[{session_id}] Passive mode active on target: {target}")
+    logger.warning(
+        "SIMULATION MODE: this run generates synthetic telemetry (random.gauss), "
+        "not real data from '%s'. See the 'Replace this block' comment below to wire in "
+        "actual LLM gateway telemetry before using this for detection.", target
+    )
     logger.info(f"Collecting baseline for {window_seconds}s. Press Ctrl+C to stop early.")
 
     baseline = BehavioralBaseline(target, window_seconds, output_dir)
@@ -520,6 +525,12 @@ def run_enforcement_mode(target: str, mode: str, policy: dict,
 
     logger.info(f"[{session_id}] Sovereign Sentinel ACTIVE | target={target} | mode={mode.upper()}")
     logger.info(f"SIEM output: {policy.get('siem_output', 'stdout')}")
+    logger.warning(
+        "SIMULATION MODE: this run evaluates synthetic telemetry (random.gauss), "
+        "not a real event stream from '%s'. No real tool calls are being permitted, "
+        "throttled, or blocked. See the 'Replace this block' comment below to wire in "
+        "a real LLM gateway or MCP adapter before relying on this for enforcement.", target
+    )
     logger.info("Monitoring LLM gateway event stream. Press Ctrl+C to stop.")
 
     iteration = 0

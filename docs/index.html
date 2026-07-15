@@ -192,7 +192,7 @@ footer li a:hover{color:var(--cyan)}
   <div class="wrap hero">
     <div class="tagchip"><span class="dot"></span> v1.1.0 &middot; Apache 2.0 &middot; Open Source Research Artifact</div>
     <h1>Governed Security Hunting for the <span class="grad">Agentic AI Era</span></h1>
-    <p class="sub">Your SIEM has no baseline for a multi-agent tool call chain. Your EDR cannot see inside an LLM gateway. GSH deploys autonomous Sovereign Sentinels that hunt agentic threats at machine speed, with every signal mapped to MITRE ATLAS and NIST CSF 2.0.</p>
+    <p class="sub">Your SIEM has no baseline for a multi-agent tool call chain. Your EDR cannot see inside an LLM gateway. GSH is an open-source runtime security framework for AI agents and MCP systems: structured hunt playbooks, a policy-driven Sentinel engine, and detection logic for runaway agents, unauthorized tool calls, behavioral drift, DNS exfiltration, and poisoned MCP tools &mdash; every signal mapped to MITRE ATLAS and NIST CSF 2.0.</p>
     <div class="cta">
       <a class="btn btn-pri" href="https://github.com/sunilgentyala/gsh-framework" target="_blank" rel="noopener">View on GitHub</a>
       <a class="btn btn-sec" href="#playbooks">Explore the Playbooks</a>
@@ -229,7 +229,7 @@ footer li a:hover{color:var(--cyan)}
   <div class="wrap">
     <div class="kicker">Architecture</div>
     <h2>The GSH Defense Loop</h2>
-    <p class="lede">A continuous four-stage loop replaces periodic human-initiated hunts. Sovereign Sentinels run as persistent agents inside the service mesh, monitoring peer agents and enforcing behavioral boundaries at the tool invocation layer.</p>
+    <p class="lede">A continuous four-stage loop replaces periodic human-initiated hunts. Sovereign Sentinels are designed to run as persistent agents monitoring peer agents and enforcing behavioral boundaries at the tool invocation layer. The reference implementation runs this full loop today against synthetic telemetry &mdash; wiring stage 1 to a real LLM gateway or MCP event stream is the integration step before production enforcement.</p>
     <div class="loop">
       <div class="stage"><div class="bar"></div><h3>DDI-AI Telemetry Collection</h3><p>DNS, DHCP, and IPAM streams ingested per agent namespace. Shannon entropy, query length outliers, and beaconing regularity computed in real time.</p></div>
       <div class="stage"><div class="bar"></div><h3>Sovereign Sentinel Analysis</h3><p>Persistent hunting agents apply playbook detection logic: tool call anomaly detection, semantic injection scoring, drift measurement, loop detection.</p></div>
@@ -258,7 +258,7 @@ footer li a:hover{color:var(--cyan)}
 <section class="alt" id="playbooks">
   <div class="wrap">
     <div class="kicker">Operational Suite</div>
-    <h2>Five hunt playbooks, deployable today</h2>
+    <h2>Five hunt playbooks, with working reference detection logic</h2>
     <p class="lede">Each playbook ships with a threat hypothesis, behavioral indicators, required data sources, detection logic with thresholds, a triage decision tree, and prioritized response actions.</p>
     <div class="pbgrid">
       <a class="pb" href="https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-001-agentic-loop-detection.md" target="_blank" rel="noopener">
@@ -347,6 +347,7 @@ footer li a:hover{color:var(--cyan)}
   <span class="c-flag">--server</span> <span class="c-str">"corp-tools-mcp-01"</span></pre>
       </div>
     </div>
+    <p class="lede" style="margin-top:18px;font-size:.9rem">As shipped, the Sentinel scripts run against a synthetic telemetry generator (logged as <code>SIMULATION MODE</code> at startup) so the detection logic is visible immediately. Point them at real LLM gateway or MCP telemetry &mdash; documented inline in the scripts &mdash; before using this for live enforcement.</p>
   </div>
 </section>
 

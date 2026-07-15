@@ -23,6 +23,12 @@ All detection signals are mapped to MITRE ATLAS and NIST CSF 2.0, giving practit
 
 ---
 
+## Current Status
+
+The hunt playbooks, detection logic, thresholds, and policy schema are complete and documented. The `Sentinel` reference scripts (`gsh-sentinel-deploy.py`, `gsh-probe-eval.py`) implement the full baselining, drift-scoring, and ZTLV enforcement logic end-to-end, but ship with a **synthetic telemetry generator** (clearly marked `SIMULATION MODE` in the script output and `# Replace this block` in source) so you can see the detection logic run without a live environment first. Wiring `--target` to a real LLM gateway or MCP event stream is the integration step you complete before using this for actual enforcement — it is not yet a drop-in production deployment. A working MCP proxy adapter is the next planned milestone; see [open issues](https://github.com/sunilgentyala/gsh-framework/issues).
+
+---
+
 ## Framework Components
 
 | Component | Description |
@@ -77,6 +83,8 @@ python scripts/gsh-sentinel-deploy.py \
   --policy configs/sentinel-policy-default.yaml \
   --baseline-window 7d
 ```
+
+As shipped, this generates synthetic telemetry (`SIMULATION MODE`, logged at startup) so you can watch the baselining and scoring logic run immediately. Replace the telemetry-generation block noted in the script (real LLM gateway/API metrics, LangChain callbacks, or an MCP proxy) to run it against live traffic.
 
 ### 4. Run a Hunt Playbook
 
