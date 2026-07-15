@@ -5,7 +5,7 @@ MCP Runtime Adapter - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.2.0-dev
+Version: 1.2.0
 License: See LICENSE
 
 Description:
@@ -25,7 +25,7 @@ Description:
         - Basic parameter inspection (credential patterns, path
           traversal, suspicious encoding) reused from Hunt-004
 
-    Known limitations (v1.2.0-dev):
+    Known limitations (v1.2.0):
         - Only the stdio transport is implemented (the most common local
           MCP transport). Streamable HTTP/SSE servers are not supported yet.
         - Canary comparison (playbook section 5.2, check 3) is not
@@ -542,7 +542,7 @@ def connect_and_snapshot(server_cmd: list, server_id: str,
             "params": {
                 "protocolVersion": "2025-06-18",
                 "capabilities": {},
-                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.2.0-dev"},
+                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.2.0"},
             },
         })
         init_response = _read_with_timeout(proc.stdout, timeout)

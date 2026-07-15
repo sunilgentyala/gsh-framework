@@ -1,7 +1,7 @@
 # ============================================================
 # Governed Security Hunting (GSH) Framework
 # Sovereign Sentinel Default Policy Configuration
-# Version: 1.0.0-beta
+# Version: 1.2.0
 # Author: Sunil Gentyala <sunil.gentyala@ieee.org>
 # Last Updated: 2026-03-01
 #
@@ -24,7 +24,7 @@
 # ============================================================
 
 global:
-  framework_version: "1.0.0-beta"
+  framework_version: "1.2.0"
   organization: ""                        # Set to your organization name
   environment: "production"               # production | staging | development
   log_level: "INFO"                       # DEBUG | INFO | WARN | ERROR

@@ -6,7 +6,7 @@ Behavioral Baseline Probe Evaluation Engine
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.1.0
+Version: 1.2.0
 License: See LICENSE
 
 Description:
@@ -653,7 +653,7 @@ def run_mcp_snapshot(args) -> int:
     baseline_path = Path(args.output) / "baselines" / "mcp" / f"{args.server}.json"
 
     logger.info("=" * 72)
-    logger.info("  GSH Framework v1.2.0-dev - MCP Snapshot (Hunt-005)")
+    logger.info("  GSH Framework v1.2.0 - MCP Snapshot (Hunt-005)")
     logger.info(f"  Server    : {args.server}")
     logger.info(f"  Command   : {args.server_cmd}")
     logger.info("=" * 72)
@@ -710,7 +710,7 @@ def main() -> int:
     )
 
     logger.info("=" * 72)
-    logger.info("  GSH Framework v1.1.0 - Probe Evaluation Engine")
+    logger.info("  GSH Framework v1.2.0 - Probe Evaluation Engine")
     logger.info("  Hunt-003: ML Model Poisoning / Behavioral Drift")
     logger.info(f"  Endpoint : {args.endpoint}")
     logger.info(f"  Model    : {args.model}")
