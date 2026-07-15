@@ -1,13 +1,13 @@
-# GSH Hunt Playbook 001 — Agentic Loop Detection
+# GSH Hunt Playbook 001 - Agentic Loop Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.0.0-beta  
+**Framework:** Governed Security Hunting (GSH) v1.1.0  
 **Threat Class:** Autonomous Agent Resource Exhaustion / Infinite Execution Loop  
 **Severity:** High  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  
 **Contact:** sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com  
 **NIST CSF 2.0 Mapping:** DE.AE-02, DE.CM-01, RS.MI-01, PR.PS-04  
 **MITRE ATLAS Mapping:** AML.T0048 (Societal Harm), AML.T0040 (ML Model Inference API Access)  
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-07-15
 
 ---
 
@@ -27,7 +27,7 @@ Agentic loop attacks are a denial-of-capability threat: the target system remain
 | Attack Vector | Task prompt designed to create circular reasoning; tool output that continuously satisfies re-invocation conditions; malicious memory store entry that perpetuates the loop |
 | Target Asset | LLM orchestration layer, LLM inference API, compute and token budget |
 | Business Impact | Compute cost exhaustion, API quota depletion, denial of service to other agent workloads, downstream SLA breach |
-| Detection Difficulty | Medium — loop conditions are observable via telemetry but require baseline context to distinguish from legitimate long-running tasks |
+| Detection Difficulty | Medium - loop conditions are observable via telemetry but require baseline context to distinguish from legitimate long-running tasks |
 
 ---
 
@@ -133,7 +133,7 @@ def token_velocity_alert(current_tpm: float, baseline_tpm: float, multiplier: fl
 ## 6. Triage Decision Tree
 
 ```
-[ALERT TRIGGERED — Loop Suspected]
+[ALERT TRIGGERED - Loop Suspected]
           │
           ▼
 Has the agent exceeded max_iterations without a terminal state?

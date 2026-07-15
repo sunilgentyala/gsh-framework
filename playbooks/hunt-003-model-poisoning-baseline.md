@@ -1,19 +1,19 @@
-# GSH Hunt Playbook 003 — Model Poisoning and Behavioral Drift Detection
+# GSH Hunt Playbook 003 - Model Poisoning and Behavioral Drift Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.0.0-beta  
+**Framework:** Governed Security Hunting (GSH) v1.1.0  
 **Threat Class:** ML Model Poisoning / Adversarial Behavioral Drift  
 **Severity:** Critical  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  
 **Contact:** sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com  
 **NIST CSF 2.0 Mapping:** ID.RA-01, DE.AE-02, DE.CM-06, RS.AN-03, PR.PS-01  
 **MITRE ATLAS Mapping:** AML.T0020 (Poison Training Data), AML.T0043 (Craft Adversarial Data), AML.T0044 (Backdoor ML Model), AML.T0018 (Backdoor Attack)  
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-07-15
 
 ---
 
 ## 1. Threat Hypothesis
 
-> A production AI model or the fine-tuning dataset used to produce it has been deliberately corrupted by an adversary. The poisoning may manifest as a backdoor trigger (a specific input pattern that causes the model to produce attacker-desired outputs) or as a more diffuse behavioral drift (gradual deviation from the model's expected output distribution across a class of inputs). In agentic deployments, poisoned models do not merely produce incorrect text — they drive incorrect, harmful, or adversarial tool invocations, API calls, and downstream system interactions.
+> A production AI model or the fine-tuning dataset used to produce it has been deliberately corrupted by an adversary. The poisoning may manifest as a backdoor trigger (a specific input pattern that causes the model to produce attacker-desired outputs) or as a more diffuse behavioral drift (gradual deviation from the model's expected output distribution across a class of inputs). In agentic deployments, poisoned models do not merely produce incorrect text - they drive incorrect, harmful, or adversarial tool invocations, API calls, and downstream system interactions.
 
 This playbook establishes a continuous behavioral baselining approach that detects poisoning-induced drift without requiring access to model weights or training data.
 
@@ -27,7 +27,7 @@ This playbook establishes a continuous behavioral baselining approach that detec
 | Attack Vector | Poisoned fine-tuning dataset; backdoor trigger embedded in production input; adversarially crafted RAG documents that act as persistent injected instructions |
 | Target Asset | Production LLM, fine-tuned model checkpoint, RAG vector store, agent behavioral envelope |
 | Business Impact | Silent compromise of all agent decisions driven by the poisoned model; undetectable policy violations; adversary-directed tool invocations across all sessions using the affected model |
-| Detection Difficulty | Very High — behavioral drift from poisoning is subtle by design; backdoor triggers may activate only on rare specific inputs; no model weight access is required to detect, but output-layer behavioral monitoring must be comprehensive |
+| Detection Difficulty | Very High - behavioral drift from poisoning is subtle by design; backdoor triggers may activate only on rare specific inputs; no model weight access is required to detect, but output-layer behavioral monitoring must be comprehensive |
 
 ---
 
@@ -208,7 +208,7 @@ def detect_rag_poisoning(
 ## 6. Triage Decision Tree
 
 ```
-[ALERT TRIGGERED — Drift or Poisoning Suspected]
+[ALERT TRIGGERED - Drift or Poisoning Suspected]
           │
           ▼
 Does the model checkpoint hash match the approved registry entry?

@@ -1,6 +1,6 @@
-# GSH Hunt Playbook 002 — DDI Tunneling Anomaly Detection
+# GSH Hunt Playbook 002 - DDI Tunneling Anomaly Detection
 
-**Framework:** Governed Security Hunting (GSH) v1.0.0-beta  
+**Framework:** Governed Security Hunting (GSH) v1.1.0  
 **Threat Class:** Covert Command-and-Control via DNS/DHCP/IPAM (DDI) Exfiltration  
 **Severity:** Critical  
 **Author:** Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech  
@@ -8,7 +8,7 @@
 **NIST CSF 2.0 Mapping:** DE.CM-01, DE.AE-04, PR.DS-01, RS.AN-03  
 **MITRE ATT&CK Mapping:** T1071.004 (DNS Application Layer Protocol), T1048 (Exfiltration Over Alternative Protocol), T1568 (Dynamic Resolution)  
 **MITRE ATLAS Mapping:** AML.T0048 (Societal Harm via Exfiltration), AML.T0051 (LLM Prompt Injection via Retrieved Content)  
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-07-15
 
 ---
 
@@ -28,7 +28,7 @@ The DDI-AI Fusion layer in the GSH framework is specifically designed to apply A
 | Attack Vector | Agent process encodes exfiltrated data (context window contents, retrieved documents, API keys) into DNS query subdomains; uses DHCP requests for timing-based signaling; exploits IPAM lease data for reconnaissance |
 | Target Asset | DDI infrastructure, agent context window data, API credentials, vector memory store contents |
 | Business Impact | Intellectual property exfiltration, credential theft, regulatory breach (GDPR, HIPAA, PCI-DSS), persistent adversarial foothold |
-| Detection Difficulty | High — DDI traffic is rarely inspected at the content layer; AI agent network activity provides natural cover; tunneling traffic is designed to mimic legitimate query patterns |
+| Detection Difficulty | High - DDI traffic is rarely inspected at the content layer; AI agent network activity provides natural cover; tunneling traffic is designed to mimic legitimate query patterns |
 
 ---
 
@@ -187,7 +187,7 @@ def detect_beaconing(query_timestamps: list[float], cv_threshold: float = 0.05) 
 ## 6. Triage Decision Tree
 
 ```
-[ALERT TRIGGERED — DDI Anomaly Detected]
+[ALERT TRIGGERED - DDI Anomaly Detected]
           │
           ▼
 Does the flagged DNS query have >= 2 tunneling indicators
@@ -241,7 +241,7 @@ Is single-domain query concentration > 60% in 10-min window?
 
 ### Long-Term (Post-Incident)
 
-1. Deploy DNS-layer content inspection (RPZ — Response Policy Zones) for all agent process namespaces
+1. Deploy DNS-layer content inspection (RPZ - Response Policy Zones) for all agent process namespaces
 2. Enforce egress allowlisting at the DNS resolver level for agent workloads
 3. Implement payload-aware DNS inspection for agent-attributed queries
 4. Update threat intelligence with newly identified C2 domains

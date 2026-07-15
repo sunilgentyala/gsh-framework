@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSH Framework | Governed Security Hunting for Agentic AI</title>
+<meta name="description" content="Open-source autonomous agentic AI threat hunting framework. Hunt playbooks, behavioral baselining, and zero-trust enforcement for LLM and multi-agent pipeline security. Mapped to MITRE ATLAS and NIST CSF 2.0.">
+<meta name="author" content="Sunil Gentyala">
+<meta property="og:title" content="GSH Framework | Governed Security Hunting for Agentic AI">
+<meta property="og:description" content="Autonomous agentic AI threat hunting: five hunt playbooks, Sovereign Sentinel enforcement, DDI-AI Fusion, and Zero-Trust Logic Validation.">
+<meta property="og:url" content="https://sunilgentyala.github.io/gsh-framework/">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128737;</text></svg>">
+<style>
+:root{
+  --bg:#060b14;
+  --bg-alt:#0a1220;
+  --panel:#0e1728;
+  --panel-2:#111d33;
+  --border:#1c2a44;
+  --border-hi:#2b4066;
+  --text:#c9d6ea;
+  --text-dim:#8296b3;
+  --head:#eef4fc;
+  --cyan:#22d3ee;
+  --cyan-dim:rgba(34,211,238,.12);
+  --green:#34d399;
+  --amber:#fbbf24;
+  --red:#f87171;
+  --mono:'Cascadia Code','SF Mono','Fira Code',Consolas,Menlo,monospace;
+  --sans:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;overflow-x:hidden}
+::selection{background:var(--cyan);color:#04121a}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ---------- nav ---------- */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(6,11,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{font-family:var(--mono);font-weight:700;color:var(--head);font-size:1.02rem;letter-spacing:.02em}
+.brand .p{color:var(--cyan)}
+.navlinks{display:flex;gap:26px;align-items:center}
+.navlinks a{color:var(--text-dim);font-size:.9rem;font-weight:500}
+.navlinks a:hover{color:var(--cyan);text-decoration:none}
+.gh-btn{border:1px solid var(--border-hi);padding:7px 14px;border-radius:8px;color:var(--head)!important;font-family:var(--mono);font-size:.82rem!important;transition:.2s}
+.gh-btn:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+@media(max-width:760px){.navlinks a:not(.gh-btn){display:none}}
+
+/* ---------- hero ---------- */
+header{position:relative;padding:150px 0 90px;background:
+  radial-gradient(ellipse 90% 60% at 50% -10%,rgba(34,211,238,.13),transparent 60%),
+  linear-gradient(180deg,var(--bg-alt),var(--bg));
+  border-bottom:1px solid var(--border)}
+header::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(34,211,238,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.045) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 0%,#000 30%,transparent 75%)}
+.hero{position:relative;text-align:center;max-width:880px;margin:0 auto}
+.tagchip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.76rem;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.08);padding:6px 14px;border-radius:999px;margin-bottom:26px}
+.tagchip .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.4}}
+h1{font-size:clamp(2.1rem,5.4vw,3.5rem);color:var(--head);line-height:1.12;letter-spacing:-.02em;font-weight:800}
+h1 .grad{background:linear-gradient(92deg,var(--cyan),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:22px auto 0;max-width:720px;color:var(--text-dim);font-size:1.08rem}
+.cta{margin-top:36px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:12px 24px;border-radius:10px;font-weight:600;font-size:.94rem;transition:.2s;text-decoration:none!important}
+.btn-pri{background:linear-gradient(92deg,var(--cyan),#38bdf8);color:#04121a}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(34,211,238,.35)}
+.btn-sec{border:1px solid var(--border-hi);color:var(--head);background:rgba(255,255,255,.02)}
+.btn-sec:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+.badges{margin-top:34px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.bdg{font-family:var(--mono);font-size:.72rem;padding:5px 12px;border-radius:6px;border:1px solid var(--border);color:var(--text-dim);background:var(--panel)}
+.bdg b{color:var(--head);font-weight:600}
+.stats{margin-top:56px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.stat{background:var(--panel);padding:20px 12px;text-align:center}
+.stat .n{font-family:var(--mono);font-size:1.55rem;font-weight:700;color:var(--cyan)}
+.stat .l{font-size:.76rem;color:var(--text-dim);margin-top:3px;text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- sections ---------- */
+section{padding:86px 0}
+section.alt{background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.kicker{font-family:var(--mono);font-size:.78rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.18em;margin-bottom:12px}
+h2{color:var(--head);font-size:clamp(1.5rem,3vw,2.1rem);letter-spacing:-.01em;margin-bottom:14px;font-weight:750}
+.lede{color:var(--text-dim);max-width:760px;font-size:1.02rem;margin-bottom:44px}
+
+/* problem cards */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:860px){.grid3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;transition:.2s}
+.card:hover{border-color:var(--border-hi);transform:translateY(-3px)}
+.card .ic{font-size:1.5rem;margin-bottom:14px}
+.card h3{color:var(--head);font-size:1.04rem;margin-bottom:9px;font-weight:650}
+.card p{font-size:.9rem;color:var(--text-dim)}
+
+/* defense loop */
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:stage}
+@media(max-width:960px){.loop{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.loop{grid-template-columns:1fr}}
+.stage{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px 20px 20px}
+.stage::before{counter-increment:stage;content:"0" counter(stage);position:absolute;top:16px;right:18px;font-family:var(--mono);font-size:.8rem;color:var(--cyan);opacity:.85}
+.stage h3{color:var(--head);font-size:.96rem;margin-bottom:8px;padding-right:34px;font-weight:650}
+.stage p{font-size:.84rem;color:var(--text-dim)}
+.stage .bar{height:3px;width:44px;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--green));margin-bottom:14px}
+.loopnote{margin-top:18px;font-family:var(--mono);font-size:.8rem;color:var(--text-dim);text-align:center}
+.loopnote span{color:var(--green)}
+
+/* components */
+.comp{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media(max-width:760px){.comp{grid-template-columns:1fr}}
+.comp .card.wide{grid-column:1/-1;background:linear-gradient(135deg,var(--panel-2),var(--panel));border-color:var(--border-hi)}
+.mono-tag{font-family:var(--mono);font-size:.72rem;color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(34,211,238,.3);padding:3px 9px;border-radius:6px;display:inline-block;margin-bottom:12px}
+
+/* playbooks */
+.pbgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media(max-width:820px){.pbgrid{grid-template-columns:1fr}}
+.pb{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.2s;display:block;text-decoration:none!important}
+.pb:hover{border-color:var(--cyan);transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.pb .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pb .id{font-family:var(--mono);font-size:.8rem;color:var(--cyan);font-weight:700}
+.sev{font-family:var(--mono);font-size:.68rem;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.08em}
+.sev.crit{color:var(--red);border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
+.sev.high{color:var(--amber);border:1px solid rgba(251,191,36,.4);background:rgba(251,191,36,.08)}
+.pb h3{color:var(--head);font-size:1.02rem;margin-bottom:8px;font-weight:650}
+.pb p{font-size:.87rem;color:var(--text-dim);margin-bottom:14px}
+.pb .map{font-family:var(--mono);font-size:.72rem;color:var(--text-dim);border-top:1px dashed var(--border);padding-top:12px}
+.pb .map b{color:var(--text);font-weight:600}
+.pb.new{position:relative;border-color:rgba(52,211,153,.45)}
+.newchip{position:absolute;top:-11px;right:18px;font-family:var(--mono);font-size:.66rem;background:var(--green);color:#04140d;font-weight:700;padding:3px 10px;border-radius:999px;letter-spacing:.1em}
+
+/* coverage table */
+.tblwrap{overflow-x:auto;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:720px}
+th{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);text-align:left;padding:14px 18px;border-bottom:1px solid var(--border-hi);background:var(--panel-2)}
+td{padding:13px 18px;border-bottom:1px solid var(--border);color:var(--text-dim);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--head);font-weight:550}
+td code{font-family:var(--mono);font-size:.78rem;color:var(--green)}
+
+/* quickstart */
+.qs{display:grid;grid-template-columns:1fr 1.2fr;gap:36px;align-items:start}
+@media(max-width:880px){.qs{grid-template-columns:1fr}}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:14px;padding:14px;border-radius:10px}
+.step .num{font-family:var(--mono);color:var(--cyan);font-weight:700;font-size:.85rem;flex-shrink:0;width:26px;height:26px;border:1px solid var(--border-hi);border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--panel)}
+.step h4{color:var(--head);font-size:.92rem;font-weight:600}
+.step p{font-size:.83rem;color:var(--text-dim)}
+.term{background:#050a12;border:1px solid var(--border);border-radius:14px;overflow:hidden;font-family:var(--mono);font-size:.8rem}
+.term .bar{display:flex;gap:7px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--panel)}
+.term .bar i{width:11px;height:11px;border-radius:50%;display:block}
+.term pre{padding:20px;overflow-x:auto;line-height:1.7;color:var(--text)}
+.c-cmt{color:#5b7089}.c-cmd{color:var(--green)}.c-flag{color:var(--cyan)}.c-str{color:#fbbf24}
+
+/* citation */
+.cite{background:#050a12;border:1px solid var(--border);border-radius:14px;padding:24px;font-family:var(--mono);font-size:.78rem;color:var(--text-dim);overflow-x:auto;position:relative}
+.cite .k{color:var(--cyan)}.cite .v{color:var(--amber)}
+.copybtn{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:.7rem;background:var(--panel);border:1px solid var(--border-hi);color:var(--text-dim);padding:5px 12px;border-radius:7px;cursor:pointer;transition:.2s}
+.copybtn:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* footer */
+footer{border-top:1px solid var(--border);background:var(--bg-alt);padding:54px 0 40px}
+.frow{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+footer h4{color:var(--head);font-size:.9rem;margin-bottom:12px;font-weight:650}
+footer ul{list-style:none}
+footer li{margin-bottom:8px;font-size:.86rem}
+footer li a{color:var(--text-dim)}
+footer li a:hover{color:var(--cyan)}
+.fbottom{margin-top:40px;padding-top:22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:.8rem;color:var(--text-dim)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="p">&gt;_</span> GSH Framework</div>
+    <div class="navlinks">
+      <a href="#problem">Why GSH</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#playbooks">Playbooks</a>
+      <a href="#coverage">Coverage</a>
+      <a href="#quickstart">Quick Start</a>
+      <a class="gh-btn" href="https://github.com/sunilgentyala/gsh-framework" target="_blank" rel="noopener">GitHub &nearr;</a>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap hero">
+    <div class="tagchip"><span class="dot"></span> v1.1.0 &middot; Apache 2.0 &middot; Open Source Research Artifact</div>
+    <h1>Governed Security Hunting for the <span class="grad">Agentic AI Era</span></h1>
+    <p class="sub">Your SIEM has no baseline for a multi-agent tool call chain. Your EDR cannot see inside an LLM gateway. GSH deploys autonomous Sovereign Sentinels that hunt agentic threats at machine speed, with every signal mapped to MITRE ATLAS and NIST CSF 2.0.</p>
+    <div class="cta">
+      <a class="btn btn-pri" href="https://github.com/sunilgentyala/gsh-framework" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-sec" href="https://github.com/sunilgentyala/gsh-framework/blob/main/docs/GSH_Framework_Whitepaper.md" target="_blank" rel="noopener">Read the Whitepaper</a>
+    </div>
+    <div class="badges">
+      <span class="bdg"><b>MITRE ATLAS</b> mapped</span>
+      <span class="bdg"><b>NIST CSF 2.0</b> aligned</span>
+      <span class="bdg"><b>MITRE ATT&amp;CK</b> cross-referenced</span>
+      <span class="bdg"><b>MCP</b> aware</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">5</div><div class="l">Hunt Playbooks</div></div>
+      <div class="stat"><div class="n">5</div><div class="l">Core Components</div></div>
+      <div class="stat"><div class="n">10+</div><div class="l">ATLAS Techniques</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">Reference Scripts</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="kicker">The Gap</div>
+    <h2>Traditional threat hunting cannot keep pace with agentic threats</h2>
+    <p class="lede">PEAK and TaHiTI were built for human adversaries moving at human speed. Agentic threats operate at inference speed, leave no file system artifacts, and attack the semantic content of a context window. Three structural gaps follow.</p>
+    <div class="grid3">
+      <div class="card"><div class="ic">&#9888;&#65039;</div><h3>Human-paced hunting cycles</h3><p>Hypothesis-driven hunts run daily or weekly. A rogue agent exfiltrating context data through DNS encoding completes its mission in minutes, across thousands of queries, before any analyst forms a hypothesis.</p></div>
+      <div class="card"><div class="ic">&#128065;&#65039;</div><h3>Invisible attack surface</h3><p>The attack surface is the context window itself: poisoned tool descriptions, adversarial retrievals, and injected instructions never touch disk and never appear in endpoint telemetry.</p></div>
+      <div class="card"><div class="ic">&#128202;</div><h3>No behavioral baselines</h3><p>A retrieval agent making hundreds of DNS queries per minute is normal. The same volume to a newly registered domain with encoded subdomains is critical. Without agent-aware baselines, both look identical.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="architecture">
+  <div class="wrap">
+    <div class="kicker">Architecture</div>
+    <h2>The GSH Defense Loop</h2>
+    <p class="lede">A continuous four-stage loop replaces periodic human-initiated hunts. Sovereign Sentinels run as persistent agents inside the service mesh, monitoring peer agents and enforcing behavioral boundaries at the tool invocation layer.</p>
+    <div class="loop">
+      <div class="stage"><div class="bar"></div><h3>DDI-AI Telemetry Collection</h3><p>DNS, DHCP, and IPAM streams ingested per agent namespace. Shannon entropy, query length outliers, and beaconing regularity computed in real time.</p></div>
+      <div class="stage"><div class="bar"></div><h3>Sovereign Sentinel Analysis</h3><p>Persistent hunting agents apply playbook detection logic: tool call anomaly detection, semantic injection scoring, drift measurement, loop detection.</p></div>
+      <div class="stage"><div class="bar"></div><h3>ZTLV Gate Enforcement</h3><p>Every tool call is validated against the agent capability manifest before execution. Permit, throttle, or block, with full audit logging.</p></div>
+      <div class="stage"><div class="bar"></div><h3>Adaptive Baseline Update</h3><p>Findings, false positive resolutions, and exception grants feed back into the behavioral baseline, continuously refining detection thresholds.</p></div>
+    </div>
+    <div class="loopnote">stage 04 <span>&#8634; feeds back into</span> stage 01 &middot; continuous, autonomous, self-healing</div>
+  </div>
+</section>
+
+<section id="components">
+  <div class="wrap">
+    <div class="kicker">Components</div>
+    <h2>Five components, one governed hunting fabric</h2>
+    <p class="lede">Each component is specified in the whitepaper and operationalized by the reference scripts and default Sentinel policy in the repository.</p>
+    <div class="comp">
+      <div class="card wide"><span class="mono-tag">core agent</span><h3>Sovereign Sentinel</h3><p>A purpose-built AI hunting agent deployed alongside LLM gateways. Four modules: telemetry ingestion, behavioral analysis, ZTLV enforcement gate, and alert-and-response. Sentinels monitor each other for compromise, keeping the hunting fabric itself self-healing.</p></div>
+      <div class="card"><span class="mono-tag">network layer</span><h3>DDI-AI Fusion</h3><p>Agent-namespace-aware baselining over DNS, DHCP, and IPAM telemetry. Separates the legitimate high-volume network activity of retrieval agents from adversarial covert channels.</p></div>
+      <div class="card"><span class="mono-tag">enforcement</span><h3>ZTLV Gate</h3><p>Zero-Trust Logic Validation at the tool invocation layer. Declarative capability manifests define authorized tools, parameter ranges, and data namespaces per agent. Everything else is blocked.</p></div>
+      <div class="card"><span class="mono-tag">detection</span><h3>Behavioral Baseline Engine</h3><p>Continuous model output drift detection using a standardized probe set, embedding drift scoring, and rolling per-agent baselines.</p></div>
+      <div class="card"><span class="mono-tag">validation</span><h3>Cognitive Red Teaming</h3><p>Structured adversarial testing of the semantic attack surface: direct and indirect injection, backdoor trigger probing, and capability boundary testing.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="playbooks">
+  <div class="wrap">
+    <div class="kicker">Operational Suite</div>
+    <h2>Five hunt playbooks, deployable today</h2>
+    <p class="lede">Each playbook ships with a threat hypothesis, behavioral indicators, required data sources, detection logic with thresholds, a triage decision tree, and prioritized response actions.</p>
+    <div class="pbgrid">
+      <a class="pb" href="https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-001-agentic-loop-detection.md" target="_blank" rel="noopener">
+        <div class="top"><span class="id">HUNT-001</span><span class="sev high">High</span></div>
+        <h3>Agentic Loop Detection</h3>
+        <p>Detects non-terminating execution cycles: runaway token velocity, repeated identical tool calls, sub-agent spawning cascades, and memory re-read loops.</p>
+        <div class="map"><b>ATLAS</b> AML.T0048, AML.T0040 &middot; <b>CSF</b> DE.AE-02, DE.CM-01, RS.MI-01</div>
+      </a>
+      <a class="pb" href="https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-002-ddi-tunneling-anomaly.md" target="_blank" rel="noopener">
+        <div class="top"><span class="id">HUNT-002</span><span class="sev crit">Critical</span></div>
+        <h3>DDI Tunneling Anomaly</h3>
+        <p>Detects covert exfiltration and C2 over DNS, DHCP, and IPAM: high-entropy subdomains, NXDOMAIN spikes, TXT abuse, and machine-regular beaconing.</p>
+        <div class="map"><b>ATLAS</b> AML.T0048, AML.T0051 &middot; <b>ATT&amp;CK</b> T1071.004, T1048, T1568</div>
+      </a>
+      <a class="pb" href="https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-003-model-poisoning-baseline.md" target="_blank" rel="noopener">
+        <div class="top"><span class="id">HUNT-003</span><span class="sev crit">Critical</span></div>
+        <h3>Model Poisoning &amp; Behavioral Drift</h3>
+        <p>Detects dataset poisoning, checkpoint supply chain compromise, and RAG poisoning through probe set evaluation and embedding drift scoring against a 30-day baseline.</p>
+        <div class="map"><b>ATLAS</b> AML.T0020, AML.T0043, AML.T0044 &middot; <b>CSF</b> ID.RA-01, DE.CM-06</div>
+      </a>
+      <a class="pb" href="https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-004-rogue-agent-detection.md" target="_blank" rel="noopener">
+        <div class="top"><span class="id">HUNT-004</span><span class="sev crit">Critical</span></div>
+        <h3>Rogue Agent Detection</h3>
+        <p>Detects agents operating outside their behavioral envelope: manifest violations, semantic injection pivots, and context-to-network exfiltration correlation, scored into a composite rogue index.</p>
+        <div class="map"><b>ATLAS</b> AML.T0051, AML.T0053, AML.T0054 &middot; <b>CSF</b> PR.PS-04, RS.AN-03</div>
+      </a>
+      <a class="pb new" href="https://github.com/sunilgentyala/gsh-framework/blob/main/playbooks/hunt-005-mcp-tool-poisoning.md" target="_blank" rel="noopener" style="grid-column:1/-1">
+        <span class="newchip">NEW IN v1.1</span>
+        <div class="top"><span class="id">HUNT-005</span><span class="sev crit">Critical</span></div>
+        <h3>MCP Supply Chain &amp; Tool Poisoning</h3>
+        <p>Detects poisoned Model Context Protocol servers: tool description injection, post-approval definition rug pulls, tool shadowing, and invisible Unicode payloads. Uses approval-time schema hashing, continuous semantic scanning, and canary comparison to catch compromise of the tool supply chain itself.</p>
+        <div class="map"><b>ATLAS</b> AML.T0010, AML.T0051, AML.T0053 &middot; <b>ATT&amp;CK</b> T1195 &middot; <b>CSF</b> ID.SC-04, PR.PS-04, DE.CM-06</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="coverage">
+  <div class="wrap">
+    <div class="kicker">Framework Alignment</div>
+    <h2>Threat coverage matrix</h2>
+    <p class="lede">Every detection signal is mapped to industry taxonomies so findings drop straight into your existing reporting and compliance workflows.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Threat</th><th>MITRE ATLAS</th><th>MITRE ATT&amp;CK</th><th>NIST CSF 2.0</th></tr></thead>
+        <tbody>
+          <tr><td>Agentic Loop / Resource Exhaustion</td><td><code>AML.T0048</code> <code>AML.T0040</code></td><td>&mdash;</td><td><code>DE.AE-02</code> <code>DE.CM-01</code> <code>RS.MI-01</code></td></tr>
+          <tr><td>DDI Covert Channel Exfiltration</td><td><code>AML.T0048</code> <code>AML.T0051</code></td><td><code>T1071.004</code> <code>T1048</code> <code>T1568</code></td><td><code>DE.CM-01</code> <code>DE.AE-04</code> <code>PR.DS-01</code></td></tr>
+          <tr><td>ML Model Poisoning / Behavioral Drift</td><td><code>AML.T0020</code> <code>AML.T0043</code> <code>AML.T0044</code></td><td>&mdash;</td><td><code>ID.RA-01</code> <code>DE.AE-02</code> <code>DE.CM-06</code></td></tr>
+          <tr><td>Rogue Agent / Unauthorized Tool Use</td><td><code>AML.T0051</code> <code>AML.T0053</code> <code>AML.T0054</code></td><td>&mdash;</td><td><code>PR.PS-04</code> <code>DE.CM-01</code> <code>RS.AN-03</code></td></tr>
+          <tr><td>MCP Supply Chain / Tool Poisoning</td><td><code>AML.T0010</code> <code>AML.T0051</code> <code>AML.T0053</code></td><td><code>T1195</code></td><td><code>ID.SC-04</code> <code>PR.PS-04</code> <code>DE.CM-06</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="quickstart">
+  <div class="wrap">
+    <div class="kicker">Deployment</div>
+    <h2>From clone to enforcement in four phases</h2>
+    <p class="lede">Start passive, build a behavioral baseline, then graduate to full ZTLV enforcement. The default policy ships sane thresholds you tune to your environment.</p>
+    <div class="qs">
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div><h4>Passive baseline (days 1 to 7)</h4><p>Deploy Sentinels in passive mode; collect telemetry, allowlist known false positive patterns.</p></div></div>
+        <div class="step"><div class="num">2</div><div><h4>Alert-only (days 8 to 14)</h4><p>Activate alerting; review false positive rate; refine thresholds and capability manifests.</p></div></div>
+        <div class="step"><div class="num">3</div><div><h4>Enforcement (day 15+)</h4><p>Enable ZTLV standard mode with automated quarantine and throttling responses.</p></div></div>
+        <div class="step"><div class="num">4</div><div><h4>Continuous validation</h4><p>Quarterly Cognitive Red Team exercises; update probe sets, baselines, and playbook coverage.</p></div></div>
+      </div>
+      <div class="term">
+        <div class="bar"><i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i></div>
+        <pre><span class="c-cmt"># clone and install</span>
+<span class="c-cmd">git clone</span> https://github.com/sunilgentyala/gsh-framework.git
+<span class="c-cmd">cd</span> gsh-framework &amp;&amp; <span class="c-cmd">pip install</span> <span class="c-flag">-r</span> requirements.txt
+
+<span class="c-cmt"># deploy a Sovereign Sentinel in passive mode</span>
+<span class="c-cmd">python</span> scripts/gsh-sentinel-deploy.py \
+  <span class="c-flag">--target</span> <span class="c-str">"llm-gateway-01"</span> \
+  <span class="c-flag">--mode</span> <span class="c-str">passive</span> \
+  <span class="c-flag">--playbooks</span> <span class="c-str">"hunt-001,hunt-002,hunt-003,hunt-004,hunt-005"</span> \
+  <span class="c-flag">--policy</span> configs/sentinel-policy-default.yaml \
+  <span class="c-flag">--baseline-window</span> <span class="c-str">7d</span>
+
+<span class="c-cmt"># snapshot MCP tool definitions (Hunt-005)</span>
+<span class="c-cmd">python</span> scripts/gsh-probe-eval.py <span class="c-flag">--mode</span> <span class="c-str">mcp-snapshot</span> \
+  <span class="c-flag">--server</span> <span class="c-str">"corp-tools-mcp-01"</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cite">
+  <div class="wrap">
+    <div class="kicker">Research</div>
+    <h2>Citation</h2>
+    <p class="lede">GSH is an open-source research artifact. If you use it in your research, please cite:</p>
+    <div class="cite">
+      <button class="copybtn" onclick="copyCite(this)">copy</button>
+<pre id="bibtex">@misc{gentyala2026gsh,
+  <span class="k">author</span>       = <span class="v">{Gentyala, Sunil}</span>,
+  <span class="k">title</span>        = <span class="v">{The Governed Security Hunting (GSH): An Autonomous Agentic
+                  Framework for Defending the Cognitive Cyber Domain}</span>,
+  <span class="k">year</span>         = <span class="v">{2026}</span>,
+  <span class="k">howpublished</span> = <span class="v">{Open Source Research Artifact, GitHub}</span>,
+  <span class="k">url</span>          = <span class="v">{https://github.com/sunilgentyala/gsh-framework}</span>
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="frow">
+      <div style="max-width:340px">
+        <div class="brand" style="margin-bottom:12px"><span class="p">&gt;_</span> GSH Framework</div>
+        <p style="font-size:.85rem;color:var(--text-dim)">Governed Security Hunting: autonomous agentic AI threat hunting for the cognitive cyber domain. Built and maintained by Sunil Gentyala, IEEE Senior Member.</p>
+      </div>
+      <div>
+        <h4>Framework</h4>
+        <ul>
+          <li><a href="https://github.com/sunilgentyala/gsh-framework/blob/main/docs/GSH_Framework_Whitepaper.md" target="_blank" rel="noopener">Whitepaper</a></li>
+          <li><a href="https://github.com/sunilgentyala/gsh-framework/tree/main/playbooks" target="_blank" rel="noopener">Hunt Playbooks</a></li>
+          <li><a href="https://github.com/sunilgentyala/gsh-framework/blob/main/configs/sentinel-policy-default.yaml" target="_blank" rel="noopener">Sentinel Policy</a></li>
+          <li><a href="https://github.com/sunilgentyala/gsh-framework/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Standards</h4>
+        <ul>
+          <li><a href="https://atlas.mitre.org/" target="_blank" rel="noopener">MITRE ATLAS</a></li>
+          <li><a href="https://attack.mitre.org/" target="_blank" rel="noopener">MITRE ATT&amp;CK</a></li>
+          <li><a href="https://www.nist.gov/cyberframework" target="_blank" rel="noopener">NIST CSF 2.0</a></li>
+          <li><a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Author</h4>
+        <ul>
+          <li><a href="https://github.com/sunilgentyala" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://orcid.org/0009-0005-2642-3479" target="_blank" rel="noopener">ORCID</a></li>
+          <li><a href="mailto:sunil.gentyala@ieee.org">sunil.gentyala@ieee.org</a></li>
+          <li><a href="https://github.com/sunilgentyala/contextguard" target="_blank" rel="noopener">ContextGuard (related)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="fbottom">
+      <span>&copy; 2026 Sunil Gentyala &middot; Apache License 2.0</span>
+      <span>GSH Framework v1.1.0</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+function copyCite(btn){
+  const txt=document.getElementById('bibtex').innerText;
+  navigator.clipboard.writeText(txt).then(()=>{btn.textContent='copied!';setTimeout(()=>btn.textContent='copy',1600)});
+}
+</script>
+</body>
+</html>

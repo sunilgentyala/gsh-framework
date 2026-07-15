@@ -6,7 +6,7 @@ DNS/DHCP/IPAM (DDI) Log Parser with AI Agent Anomaly Detection
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.0.0-beta
+Version: 1.1.0
 License: See LICENSE
 
 Description:
@@ -650,7 +650,7 @@ def main() -> int:
                     return 1
 
     logger.info("=" * 72)
-    logger.info("  GSH Framework v1.0.0-beta - DDI Log Parser")
+    logger.info("  GSH Framework v1.1.0 - DDI Log Parser")
     logger.info("  Hunt-002: DDI Covert Channel / C2 via DNS")
     logger.info(f"  Input   : {args.input}")
     logger.info(f"  Format  : {args.format}")

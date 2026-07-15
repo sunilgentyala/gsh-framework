@@ -20,7 +20,7 @@ Unlike the static PEAK or TaHiTI models, GSH deploys Sovereign Sentinels: specia
 
 The deployment of autonomous AI agents across enterprise environments has introduced a category of cyber threat for which the security industry is structurally unprepared. Traditional threat-hunting frameworks, including PEAK (Prepare, Execute, Act, Know) and TaHiTI (Targeted Hunting integrating Threat Intelligence), were conceived in an era when threat actors were human operators moving laterally through networks at human speed. The hunts they enable are hypothesis-driven, human-initiated, and periodic. They are not designed to detect threats that operate at inference speed, produce no file system artifacts, and whose attack surface is the semantic content of a language model's context window.
 
-The Year of the Agent — characterized by the widespread adoption of autonomous, tool-using, memory-enabled AI systems — demands a corresponding evolution in defensive architecture. When a rogue AI agent exfiltrates data through DNS subdomain encoding, it does so at machine speed across thousands of queries. When a poisoned model backdoor activates, it does so silently, identically, across every session that presents the trigger. No human-paced hunting cycle can intercept these events at the moment of impact.
+The Year of the Agent - characterized by the widespread adoption of autonomous, tool-using, memory-enabled AI systems - demands a corresponding evolution in defensive architecture. When a rogue AI agent exfiltrates data through DNS subdomain encoding, it does so at machine speed across thousands of queries. When a poisoned model backdoor activates, it does so silently, identically, across every session that presents the trigger. No human-paced hunting cycle can intercept these events at the moment of impact.
 
 This paper proposes the Governed Security Hunting (GSH) framework as a direct architectural response to this gap. GSH is not an incremental extension of existing frameworks. It is a ground-up redesign of the threat-hunting function for environments where the threat actor, the attack surface, and the defender are all AI systems. The framework's core innovation, the Sovereign Sentinel, is an AI hunting agent that operates continuously within the service mesh, monitoring peer agents and enforcing zero-trust behavioral boundaries at the tool invocation layer.
 
@@ -37,7 +37,7 @@ This paper makes the following original contributions:
 3. DDI-AI Fusion: an AI-agent-aware approach to DDI telemetry analysis that separates legitimate agent network activity from adversarial covert channel usage
 4. Zero-Trust Logic Validation (ZTLV): a tool-invocation-layer enforcement mechanism that applies zero-trust principles to agent action authorization
 5. Cognitive Red Teaming: a structured adversarial testing methodology specific to agentic AI pipelines
-6. A complete suite of four operational hunt playbooks mapped to NIST CSF 2.0 and MITRE ATLAS
+6. A complete suite of five operational hunt playbooks mapped to NIST CSF 2.0 and MITRE ATLAS, covering agentic loops, DDI covert channels, model poisoning, rogue agents, and MCP supply chain compromise
 
 ---
 
@@ -51,7 +51,7 @@ The TaHiTI framework, developed by the Dutch financial sector, integrates threat
 
 ### 2.2 MITRE ATLAS and Agentic Threat Modeling
 
-The MITRE ATLAS (Adversarial Threat Landscape for Artificial Intelligence Systems) framework provides the most comprehensive publicly available taxonomy of AI-specific attack techniques. ATLAS documents techniques including training data poisoning (AML.T0020), backdoor model attacks (AML.T0044), prompt injection (AML.T0051), and LLM jailbreaking (AML.T0054). The GSH framework uses ATLAS as its primary threat taxonomy and maps all four hunt playbooks to ATLAS techniques.
+The MITRE ATLAS (Adversarial Threat Landscape for Artificial Intelligence Systems) framework provides the most comprehensive publicly available taxonomy of AI-specific attack techniques. ATLAS documents techniques including training data poisoning (AML.T0020), backdoor model attacks (AML.T0044), prompt injection (AML.T0051), and LLM jailbreaking (AML.T0054). The GSH framework uses ATLAS as its primary threat taxonomy and maps all five hunt playbooks to ATLAS techniques.
 
 A gap in current ATLAS coverage, which GSH addresses, is the intersection of AI-specific attack techniques with traditional network and infrastructure attack vectors. The use of DNS tunneling by a rogue AI agent, for example, is a combination of the ATLAS prompt injection technique (as the mechanism of agent compromise) and the MITRE ATT&CK T1071.004 technique (DNS as a C2 protocol). GSH's DDI-AI Fusion layer is specifically designed to detect this class of hybrid attack.
 
@@ -67,9 +67,9 @@ The Model Context Protocol, introduced by Anthropic in late 2024, has become a w
 
 ## 3. Threat Model
 
-The GSH threat model addresses four primary threat classes that are specific to or significantly amplified by agentic AI deployments.
+The GSH threat model addresses five primary threat classes that are specific to or significantly amplified by agentic AI deployments.
 
-### 3.1 Threat Class 1 — Agentic Loop Attack
+### 3.1 Threat Class 1 - Agentic Loop Attack
 
 **Definition:** An adversarially crafted or misconfigured agent enters a non-terminating execution cycle, consuming compute resources and API token budgets without producing terminal outputs.
 
@@ -77,15 +77,15 @@ The GSH threat model addresses four primary threat classes that are specific to 
 
 **Impact:** Denial of capability for the targeted agentic workload; API quota exhaustion affecting co-resident workloads; financial impact from runaway token expenditure; downstream SLA breach.
 
-### 3.2 Threat Class 2 — DDI-Mediated Covert Channel
+### 3.2 Threat Class 2 - DDI-Mediated Covert Channel
 
 **Definition:** A compromised agent uses DNS, DHCP, or IPAM infrastructure as a covert data exfiltration or command-and-control channel.
 
-**Mechanism:** The agent encodes data from its context window — including retrieved documents, API keys, or user inputs — into DNS subdomain query strings using Base64 or similar encoding schemes. The queries are resolved through the enterprise DNS resolver to an adversary-controlled authoritative server, which reconstructs the exfiltrated data from the query log. DHCP and IPAM can be used for timing-based signaling.
+**Mechanism:** The agent encodes data from its context window - including retrieved documents, API keys, or user inputs - into DNS subdomain query strings using Base64 or similar encoding schemes. The queries are resolved through the enterprise DNS resolver to an adversary-controlled authoritative server, which reconstructs the exfiltrated data from the query log. DHCP and IPAM can be used for timing-based signaling.
 
 **Impact:** Silent exfiltration of sensitive context window data; credential theft; persistent adversarial C2 channel that survives agent session termination.
 
-### 3.3 Threat Class 3 — Model Poisoning and Behavioral Drift
+### 3.3 Threat Class 3 - Model Poisoning and Behavioral Drift
 
 **Definition:** A production AI model, or the dataset used to fine-tune it, has been deliberately corrupted to introduce adversarially controlled behavioral patterns.
 
@@ -93,13 +93,21 @@ The GSH threat model addresses four primary threat classes that are specific to 
 
 **Impact:** Silent compromise of all agent decisions driven by the poisoned model; undetectable policy violations; adversary-directed tool invocations across all sessions using the affected model.
 
-### 3.4 Threat Class 4 — Rogue Agent Behavior
+### 3.4 Threat Class 4 - Rogue Agent Behavior
 
 **Definition:** A deployed AI agent has deviated from its authorized behavioral envelope, executing unauthorized tool calls, exfiltrating context window data, or operating under adversarially injected instructions.
 
 **Mechanism:** Rogue behavior is most commonly induced through indirect prompt injection: adversarially crafted content introduced into the agent's context window through retrieved documents, tool outputs, or MCP server responses. The injected content overrides or supplements the agent's system prompt, redirecting its behavior while maintaining the appearance of normal operation.
 
 **Impact:** Unauthorized data access; privilege escalation via API credential harvesting; lateral movement through connected tool ecosystems; reputational and regulatory exposure.
+
+### 3.5 Threat Class 5 - MCP Supply Chain and Tool Poisoning
+
+**Definition:** An MCP server connected to the agent fleet is compromised or adversarial, and the MCP trust channel itself is used as the injection vector.
+
+**Mechanism:** Attack variants include tool description poisoning (hidden instructions embedded in tool metadata that is loaded into the model context on every session), tool definition rug pulls (definitions silently mutated after initial operator approval), tool name shadowing (a malicious server publishing tools whose descriptions redirect the behavior of trusted tools), and adversarial tool return payloads. Because tool descriptions enter the context window before any user input, they constitute a higher-privilege injection channel than retrieved content.
+
+**Impact:** Fleet-wide agent compromise from a single poisoned dependency; credential harvesting at scale across every agent connected to the poisoned server; persistence that survives session termination because the poisoned definition reloads on every new session.
 
 ---
 
@@ -109,15 +117,15 @@ The GSH threat model addresses four primary threat classes that are specific to 
 
 The GSH framework is built on five design principles that distinguish it from existing threat-hunting approaches:
 
-**Principle 1 — Autonomy:** Detection and initial response must operate without human initiation. Human analysts are engaged for triage and long-term remediation, not for initial detection.
+**Principle 1 - Autonomy:** Detection and initial response must operate without human initiation. Human analysts are engaged for triage and long-term remediation, not for initial detection.
 
-**Principle 2 — Continuity:** Hunting is continuous, not periodic. Sovereign Sentinels operate as persistent processes within the service mesh, not as scheduled jobs.
+**Principle 2 - Continuity:** Hunting is continuous, not periodic. Sovereign Sentinels operate as persistent processes within the service mesh, not as scheduled jobs.
 
-**Principle 3 — Zero Trust by Default:** No agent action is trusted by default. Every tool invocation passes through the ZTLV gate regardless of the agent's identity, session history, or declared authorization level.
+**Principle 3 - Zero Trust by Default:** No agent action is trusted by default. Every tool invocation passes through the ZTLV gate regardless of the agent's identity, session history, or declared authorization level.
 
-**Principle 4 — Behavioral Primacy:** Detection is behavioral, not signature-based. The framework measures what agents do, not what they look like. Signatures are inputs to behavioral models, not the detection mechanism itself.
+**Principle 4 - Behavioral Primacy:** Detection is behavioral, not signature-based. The framework measures what agents do, not what they look like. Signatures are inputs to behavioral models, not the detection mechanism itself.
 
-**Principle 5 — Self-Healing:** The framework is designed to maintain its own operational integrity. Sovereign Sentinels monitor each other for signs of compromise, and the DDI-AI Fusion layer monitors the network activity of the hunting infrastructure itself.
+**Principle 5 - Self-Healing:** The framework is designed to maintain its own operational integrity. Sovereign Sentinels monitor each other for signs of compromise, and the DDI-AI Fusion layer monitors the network activity of the hunting infrastructure itself.
 
 ### 4.2 The GSH Defense Loop
 
@@ -140,13 +148,13 @@ The GSH framework implements a continuous four-stage defense loop:
                      [Stage 1: DDI-AI Telemetry Collection]
 ```
 
-**Stage 1 — DDI-AI Telemetry Collection:** The DDI-AI Fusion layer continuously ingests DNS query logs, DHCP transaction records, and IPAM audit data from all agent process namespaces. Shannon entropy analysis, query length outlier detection, and timing regularity analysis are applied in real time to the DDI stream.
+**Stage 1 - DDI-AI Telemetry Collection:** The DDI-AI Fusion layer continuously ingests DNS query logs, DHCP transaction records, and IPAM audit data from all agent process namespaces. Shannon entropy analysis, query length outlier detection, and timing regularity analysis are applied in real time to the DDI stream.
 
-**Stage 2 — Sovereign Sentinel Analysis:** Sovereign Sentinels, operating as persistent agents within the service mesh, analyze the behavioral telemetry of peer agents. Sentinels apply the detection logic defined in the hunt playbooks: tool call anomaly detection, semantic injection scoring, behavioral drift measurement, and loop detection.
+**Stage 2 - Sovereign Sentinel Analysis:** Sovereign Sentinels, operating as persistent agents within the service mesh, analyze the behavioral telemetry of peer agents. Sentinels apply the detection logic defined in the hunt playbooks: tool call anomaly detection, semantic injection scoring, behavioral drift measurement, and loop detection.
 
-**Stage 3 — ZTLV Gate Enforcement:** Every tool call emitted by a monitored agent passes through the Zero-Trust Logic Validation gate before execution. The gate evaluates the tool call against the agent's declared capability manifest, inspects parameters for policy violations, and applies the sentinel's current risk assessment to determine whether to permit, throttle, or block the action.
+**Stage 3 - ZTLV Gate Enforcement:** Every tool call emitted by a monitored agent passes through the Zero-Trust Logic Validation gate before execution. The gate evaluates the tool call against the agent's declared capability manifest, inspects parameters for policy violations, and applies the sentinel's current risk assessment to determine whether to permit, throttle, or block the action.
 
-**Stage 4 — Adaptive Baseline Update:** Detection findings, false positive resolutions, and approved exception grants are fed back into the behavioral baseline model. The framework continuously refines its detection thresholds based on operational experience.
+**Stage 4 - Adaptive Baseline Update:** Detection findings, false positive resolutions, and approved exception grants are fed back into the behavioral baseline model. The framework continuously refines its detection thresholds based on operational experience.
 
 ### 4.3 The Sovereign Sentinel
 
@@ -201,7 +209,7 @@ A Cognitive Red Team exercise includes:
 
 ## 5. Operational Playbook Suite
 
-The GSH framework is operationalized through a suite of four hunt playbooks. Each playbook specifies a threat hypothesis, behavioral indicators, data sources, detection logic, triage decision tree, and response actions. The playbooks are provided as structured Markdown documents in the accompanying open-source repository.
+The GSH framework is operationalized through a suite of five hunt playbooks. Each playbook specifies a threat hypothesis, behavioral indicators, data sources, detection logic, triage decision tree, and response actions. The playbooks are provided as structured Markdown documents in the accompanying open-source repository.
 
 | Playbook | Threat Class | Primary Signal | NIST CSF Function |
 |---|---|---|---|
@@ -209,6 +217,7 @@ The GSH framework is operationalized through a suite of four hunt playbooks. Eac
 | Hunt-002 | DDI Tunneling Anomaly | DNS entropy, beaconing timing, NXDOMAIN rate | Detect, Protect |
 | Hunt-003 | Model Poisoning and Behavioral Drift | Embedding drift score, probe set evaluation, RAG cluster analysis | Identify, Detect |
 | Hunt-004 | Rogue Agent Detection | Tool call anomaly, semantic injection score, credential access | Detect, Respond |
+| Hunt-005 | MCP Supply Chain and Tool Poisoning | Tool definition drift hash, description instruction-likelihood, canary comparison | Identify, Protect, Detect |
 
 ---
 
@@ -268,7 +277,7 @@ Future development of the GSH framework will address:
 
 The proliferation of autonomous AI agents has created an asymmetry between the speed of agentic threats and the speed of human-led threat hunting that existing frameworks cannot close. The Governed Security Hunting framework addresses this asymmetry directly by deploying AI agents as defenders: Sovereign Sentinels that operate at the same speed and within the same architectural layer as the threats they hunt.
 
-The framework's three core innovations — DDI-AI Fusion, Zero-Trust Logic Validation, and Cognitive Red Teaming — combine to create a defense posture that is continuous, behavioral, and architecturally native to the agentic AI environment. The accompanying open-source playbook suite provides security practitioners with immediately deployable detection logic for the four most critical agentic threat classes.
+The framework's three core innovations - DDI-AI Fusion, Zero-Trust Logic Validation, and Cognitive Red Teaming - combine to create a defense posture that is continuous, behavioral, and architecturally native to the agentic AI environment. The accompanying open-source playbook suite provides security practitioners with immediately deployable detection logic for the five most critical agentic threat classes.
 
 As AI agents become increasingly capable and increasingly integrated into enterprise operations, the security frameworks that govern them must evolve at the same pace. GSH represents one contribution to that evolution: a practical, deployable, and extensible foundation for sovereign security in the age of autonomous AI.
 
@@ -291,3 +300,7 @@ As AI agents become increasingly capable and increasingly integrated into enterp
 7. OWASP. (2025). *OWASP Top 10 for Large Language Model Applications.* https://owasp.org/www-project-top-10-for-large-language-model-applications/
 
 8. Goldblum, M., et al. (2022). *Dataset Security for Machine Learning: Data Poisoning, Backdoor Attacks, and Defenses.* IEEE Transactions on Pattern Analysis and Machine Intelligence. https://doi.org/10.1109/TPAMI.2022.3162397
+
+9. OWASP GenAI Security Project. (2025). *Agentic AI - Threats and Mitigations.* https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/
+
+10. Anthropic. (2024). *Model Context Protocol Specification.* https://modelcontextprotocol.io

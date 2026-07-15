@@ -6,7 +6,7 @@ Behavioral Baseline Probe Evaluation Engine
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.0.0-beta
+Version: 1.1.0
 License: See LICENSE
 
 Description:
@@ -640,7 +640,7 @@ def main() -> int:
     )
 
     logger.info("=" * 72)
-    logger.info("  GSH Framework v1.0.0-beta - Probe Evaluation Engine")
+    logger.info("  GSH Framework v1.1.0 - Probe Evaluation Engine")
     logger.info("  Hunt-003: ML Model Poisoning / Behavioral Drift")
     logger.info(f"  Endpoint : {args.endpoint}")
     logger.info(f"  Model    : {args.model}")
