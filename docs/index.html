@@ -347,7 +347,7 @@ footer li a:hover{color:var(--cyan)}
   <span class="c-flag">--server</span> <span class="c-str">"corp-tools-mcp-01"</span></pre>
       </div>
     </div>
-    <p class="lede" style="margin-top:18px;font-size:.9rem">As shipped, the Sentinel scripts run against a synthetic telemetry generator (logged as <code>SIMULATION MODE</code> at startup) so the detection logic is visible immediately. Point them at real LLM gateway or MCP telemetry &mdash; documented inline in the scripts &mdash; before using this for live enforcement.</p>
+    <p class="lede" style="margin-top:18px;font-size:.9rem">Hunt-001 through Hunt-004 (<code>gsh-sentinel-deploy.py</code>) run against a synthetic telemetry generator by default (logged as <code>SIMULATION MODE</code> at startup) so the detection logic is visible immediately; point them at a real LLM gateway event stream before using them for live enforcement. Hunt-005 is different: <code>gsh-mcp-proxy.py</code> is a real MCP JSON-RPC stdio proxy that intercepts actual tool definitions and tool calls and can permit, alert, or block them &mdash; see the <a href="https://github.com/sunilgentyala/gsh-framework#readme" target="_blank" rel="noopener">README</a> for the full command.</p>
   </div>
 </section>
 

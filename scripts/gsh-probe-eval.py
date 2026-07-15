@@ -34,6 +34,12 @@ Usage:
         [--model <model-name>] [--output <dir>]
         [--drift-threshold <sigma>] [--update-baseline]
 
+    # Hunt-005 mode: record an MCP server's tool-definition snapshot
+    # instead of running LLM probes (see playbooks/hunt-005-mcp-tool-poisoning.md)
+    python gsh-probe-eval.py --mode mcp-snapshot \
+        --server <label> --server-cmd "<command to launch the MCP server>" \
+        [--output <dir>]
+
 Examples:
     # Run probes and compare against existing baseline
     python gsh-probe-eval.py --endpoint https://api.openai.com/v1 --api-key $OPENAI_KEY \
@@ -47,6 +53,11 @@ Examples:
     # Use a local Ollama endpoint
     python gsh-probe-eval.py --endpoint http://localhost:11434/v1 --api-key ollama \
         --model llama3 --probe-set probes/standardized-probe-set-v1.json
+
+    # Snapshot an MCP server's tool definitions (Hunt-005 approval baseline)
+    python gsh-probe-eval.py --mode mcp-snapshot \
+        --server "corp-tools-mcp-01" \
+        --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data"
 """
 
 import argparse
@@ -61,6 +72,11 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from adapters.mcp_proxy import (  # noqa: E402
+    connect_and_snapshot, save_snapshot, MCPSnapshotError, split_command,
+)
 
 try:
     import yaml
@@ -562,8 +578,25 @@ Examples:
         """,
     )
     parser.add_argument(
-        "--endpoint", required=True,
-        help="LLM API base URL (OpenAI-compatible). E.g. https://api.openai.com/v1"
+        "--mode", default="probe-drift", choices=["probe-drift", "mcp-snapshot"],
+        help="probe-drift (default): run LLM probes and compare to baseline "
+             "(Hunt-003). mcp-snapshot: record an MCP server's tool-definition "
+             "snapshot for Hunt-005 drift detection instead."
+    )
+    parser.add_argument(
+        "--server", default=None,
+        help="[mcp-snapshot mode] Label for the MCP server, used for the "
+             "output baseline filename and as the snapshot's server_id."
+    )
+    parser.add_argument(
+        "--server-cmd", default=None,
+        help="[mcp-snapshot mode] Command to launch the MCP server, e.g. "
+             '"npx -y @modelcontextprotocol/server-filesystem /srv/data"'
+    )
+    parser.add_argument(
+        "--endpoint", default=None,
+        help="[probe-drift mode] LLM API base URL (OpenAI-compatible). "
+             "E.g. https://api.openai.com/v1. Required unless --mode mcp-snapshot."
     )
     parser.add_argument(
         "--api-key", default=os.environ.get("OPENAI_API_KEY", ""),
@@ -611,11 +644,48 @@ Examples:
     return parser
 
 
+def run_mcp_snapshot(args) -> int:
+    if not args.server or not args.server_cmd:
+        logger.error("--mode mcp-snapshot requires both --server <label> and --server-cmd <command>.")
+        return 1
+
+    server_cmd = split_command(args.server_cmd)
+    baseline_path = Path(args.output) / "baselines" / "mcp" / f"{args.server}.json"
+
+    logger.info("=" * 72)
+    logger.info("  GSH Framework v1.2.0-dev - MCP Snapshot (Hunt-005)")
+    logger.info(f"  Server    : {args.server}")
+    logger.info(f"  Command   : {args.server_cmd}")
+    logger.info("=" * 72)
+
+    try:
+        snapshot = connect_and_snapshot(server_cmd, args.server)
+    except MCPSnapshotError as e:
+        logger.error(str(e))
+        return 1
+
+    save_snapshot(snapshot, str(baseline_path))
+    logger.info(
+        f"Snapshot recorded: {snapshot['tool_count']} tool(s) -> {baseline_path}. "
+        "Review this file before treating it as an authoritative approval baseline. "
+        "Use it with: python scripts/gsh-mcp-proxy.py --baseline "
+        f"{baseline_path} --server-id {args.server} --server-cmd \"{args.server_cmd}\""
+    )
+    return 0
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
+
+    if args.mode == "mcp-snapshot":
+        return run_mcp_snapshot(args)
+
+    if not args.endpoint:
+        logger.error("--endpoint is required in probe-drift mode (or use --mode mcp-snapshot).")
+        return 1
 
     if not args.api_key:
         logger.error(

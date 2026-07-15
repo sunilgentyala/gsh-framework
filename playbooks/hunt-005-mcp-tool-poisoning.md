@@ -76,19 +76,31 @@ MCP moved the agent attack surface from the prompt to the supply chain. A tool d
 python scripts/gsh-probe-eval.py \
   --mode mcp-snapshot \
   --server "corp-tools-mcp-01" \
-  --output baselines/mcp/corp-tools-mcp-01.json
+  --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data" \
+  --output reports/
 ```
 
-The snapshot records a canonical hash per tool: `SHA-256(name || description || parameter_schema)`. Any subsequent session whose loaded definitions do not match the snapshot raises a definition drift event.
+The snapshot records a canonical hash per tool: `SHA-256(name || description || parameter_schema)`, written to `reports/baselines/mcp/corp-tools-mcp-01.json`. Any subsequent session whose loaded definitions do not match the snapshot raises a definition drift event.
 
 ### 5.2 Continuous Session Checks
 
-On every session initialization the Sentinel performs, in order:
+On every session initialization, `adapters/mcp_proxy.py` (via `scripts/gsh-mcp-proxy.py`) performs:
 
 1. **Drift check:** compare loaded tool definition hashes against the approval snapshot; any mismatch quarantines the server pending re-review
-2. **Semantic scan:** score every description and schema for instruction-likelihood, cross-tool references, and invisible Unicode content
-3. **Canary comparison:** periodically fetch definitions from an isolated canary identity and diff against production-loaded definitions to detect response asymmetry
-4. **Invocation inspection:** apply ZTLV parameter inspection with elevated sensitivity to any tool call bound for a server flagged by checks 1 to 3
+2. **Semantic scan:** score every description and schema for instruction-likelihood, cross-tool references, and invisible Unicode content - runs on every connection, including the first one, so a poisoned server cannot "become the baseline" simply by being first
+3. **Invocation inspection:** apply parameter inspection (credential patterns, path traversal, suspicious encoding, reused from Hunt-004) to every tool call, and block calls to any tool not in the last-validated definition set
+
+Run it by pointing your MCP host at the proxy instead of the real server:
+
+```bash
+python scripts/gsh-mcp-proxy.py \
+  --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data" \
+  --server-id "corp-tools-mcp-01" \
+  --mode aggressive \
+  --baseline reports/baselines/mcp/corp-tools-mcp-01.json
+```
+
+**Implementation status:** the drift check, semantic scan, and invocation inspection above are real - they run against actual MCP JSON-RPC traffic intercepted by a stdio proxy, not synthetic data (see `adapters/mcp_proxy.py` and its test coverage in `tests/test_mcp_proxy.py`). **Canary comparison (response-asymmetry detection) is not implemented** - the proxy only sees one identity's view of a server, so it cannot yet detect a server serving different definitions to different callers. Scanning tool *return values* (as opposed to definitions) for adversarial content is also not implemented. Both are tracked as follow-up work.
 
 ### 5.3 Pseudocode
 

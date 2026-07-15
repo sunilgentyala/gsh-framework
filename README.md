@@ -25,7 +25,13 @@ All detection signals are mapped to MITRE ATLAS and NIST CSF 2.0, giving practit
 
 ## Current Status
 
-The hunt playbooks, detection logic, thresholds, and policy schema are complete and documented. The `Sentinel` reference scripts (`gsh-sentinel-deploy.py`, `gsh-probe-eval.py`) implement the full baselining, drift-scoring, and ZTLV enforcement logic end-to-end, but ship with a **synthetic telemetry generator** (clearly marked `SIMULATION MODE` in the script output and `# Replace this block` in source) so you can see the detection logic run without a live environment first. Wiring `--target` to a real LLM gateway or MCP event stream is the integration step you complete before using this for actual enforcement — it is not yet a drop-in production deployment. A working MCP proxy adapter is the next planned milestone; see [open issues](https://github.com/sunilgentyala/gsh-framework/issues).
+The hunt playbooks, detection logic, thresholds, and policy schema are complete and documented.
+
+**Hunt-001 through Hunt-004** (`scripts/gsh-sentinel-deploy.py`, `scripts/gsh-probe-eval.py`) implement the full baselining, drift-scoring, and ZTLV enforcement logic end-to-end, but ship with a **synthetic telemetry generator** (clearly marked `SIMULATION MODE` in the script output and `# Replace this block` in source) so you can see the detection logic run without a live environment first. Wiring `--target` to a real LLM gateway event stream is the integration step you complete before using this for actual enforcement.
+
+**Hunt-005** (`adapters/mcp_proxy.py`, `scripts/gsh-mcp-proxy.py`) is different: it is a real MCP JSON-RPC stdio proxy that intercepts *actual* tool definitions and tool calls between a real MCP host and a real MCP server - approval-time schema hashing, drift detection, semantic poisoning scans, and per-call enforcement (permit/alert/block) all run against live traffic, not synthetic data. See `tests/test_mcp_proxy.py` for a subprocess-driven end-to-end test of the CLI. Known gaps: canary/response-asymmetry comparison and tool-return-value scanning are not implemented yet (see `playbooks/hunt-005-mcp-tool-poisoning.md` section 5.2 for details), and only the stdio transport is supported (not streamable HTTP/SSE MCP servers).
+
+See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for planned SIEM output adapters (Splunk, Elastic) and other integrations.
 
 ---
 
@@ -84,9 +90,31 @@ python scripts/gsh-sentinel-deploy.py \
   --baseline-window 7d
 ```
 
-As shipped, this generates synthetic telemetry (`SIMULATION MODE`, logged at startup) so you can watch the baselining and scoring logic run immediately. Replace the telemetry-generation block noted in the script (real LLM gateway/API metrics, LangChain callbacks, or an MCP proxy) to run it against live traffic.
+As shipped, this generates synthetic telemetry (`SIMULATION MODE`, logged at startup) so you can watch the baselining and scoring logic run immediately. Replace the telemetry-generation block noted in the script (real LLM gateway/API metrics or LangChain callbacks) to run it against live traffic.
 
-### 4. Run a Hunt Playbook
+### 4. Run the MCP Proxy (Hunt-005 - real enforcement, not simulated)
+
+Unlike step 3, this runs against real MCP traffic. First record an approval-time snapshot of the server's tool definitions:
+
+```bash
+python scripts/gsh-probe-eval.py --mode mcp-snapshot \
+  --server "corp-tools-mcp-01" \
+  --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data"
+```
+
+Then configure your MCP host to launch the proxy instead of the real server directly:
+
+```bash
+python scripts/gsh-mcp-proxy.py \
+  --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data" \
+  --server-id "corp-tools-mcp-01" \
+  --mode standard \
+  --baseline reports/baselines/mcp/corp-tools-mcp-01.json
+```
+
+The proxy will alert on (or, in `--mode aggressive`, block) definition drift, poisoned tool descriptions, invisible Unicode content, and unauthorized tool calls. See `playbooks/hunt-005-mcp-tool-poisoning.md` for the full detection logic.
+
+### 5. Run a Hunt Playbook
 
 Each playbook is a self-contained Markdown document with detection logic, data sources, MITRE ATLAS mapping, triage decision tree, and response actions. Start with Hunt-001 for loop detection:
 
@@ -111,6 +139,8 @@ gsh-framework/
 ├── CITATION.cff
 ├── CONTRIBUTING.md
 ├── requirements.txt
+├── adapters/
+│   └── mcp_proxy.py                # Real MCP JSON-RPC proxy (Hunt-005)
 ├── configs/
 │   └── sentinel-policy-default.yaml
 ├── docs/
@@ -125,8 +155,13 @@ gsh-framework/
 │   └── standardized-probe-set-v1.json
 ├── scripts/
 │   ├── ddi-log-parser-ai.py
+│   ├── gsh-mcp-proxy.py            # CLI for adapters/mcp_proxy.py
 │   ├── gsh-probe-eval.py
 │   └── gsh-sentinel-deploy.py
+├── tests/
+│   ├── test_mcp_proxy.py
+│   └── fixtures/
+│       └── mock_mcp_server.py      # Minimal MCP stdio server for testing
 ├── baselines/
 └── reports/
 ```

@@ -4,3 +4,8 @@ whitepaper/
 *.docx
 *.pdf
 *.tex
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

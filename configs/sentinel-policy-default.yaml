@@ -236,6 +236,29 @@ hunt_004:
     emit_siem_alert: true
 
 # ============================================================
+# HUNT-005: MCP SUPPLY CHAIN & TOOL POISONING
+# ============================================================
+# Consumed by adapters/mcp_proxy.py (scripts/gsh-mcp-proxy.py) - the only
+# hunt whose reference implementation is a real MCP JSON-RPC proxy rather
+# than a synthetic telemetry generator. See playbooks/hunt-005-mcp-tool-poisoning.md.
+hunt_005:
+  enabled: true
+
+  instruction_likelihood_threshold: 0.6  # playbook 5.3: s.instruction_likelihood > 0.6 -> block
+  block_on_invisible_content: true       # zero-width/tag-character payloads in tool descriptions
+  block_on_definition_drift: true        # tool schema hash mismatch vs. approval-time snapshot
+  flag_cross_tool_references: true       # one tool's description naming another tool (shadowing)
+
+  parameter_inspection:
+    credential_pattern_scan: true        # reused from hunt_004: API keys, tokens in call arguments
+    path_traversal_detection: true
+    encoding_scheme_detection: true
+
+  response_actions:
+    quarantine_server_on_block: true     # subsequent tools/call requests to the server are auto-blocked
+    empty_tool_list_on_quarantine: true  # tools/list response is rewritten to zero tools
+
+# ============================================================
 # ZERO-TRUST LOGIC VALIDATION (ZTLV) GATE
 # ============================================================
 ztlv:
