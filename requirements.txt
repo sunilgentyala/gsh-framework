@@ -1,5 +1,5 @@
 # Governed Security Hunting (GSH) Framework
-# Python Dependencies - v1.2.0
+# Python Dependencies - v1.3.0
 #
 # Core dependencies are intentionally minimal.
 # The framework ships with stdlib-only fallbacks for all optional packages.

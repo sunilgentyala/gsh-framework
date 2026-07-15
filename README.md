@@ -1,7 +1,7 @@
 # Governed Security Hunting (GSH) Framework
 
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
+[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
 [![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
 [![Website](https://img.shields.io/badge/website-live-blue)](https://sunilgentyala.github.io/gsh-framework/)
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
