@@ -333,6 +333,13 @@ ddi_fusion:
 # ============================================================
 # ALERTING AND SIEM OUTPUT
 # ============================================================
+# NOTE: the nested alerting.siem_output block below (destination, endpoint,
+# syslog_*) is descriptive only - it is not yet read by
+# scripts/gsh-sentinel-deploy.py or adapters/mcp_proxy.py. The keys those
+# scripts actually read today are the flat top-level keys further down
+# this section (siem_output, splunk_hec_url, elastic_url, etc.), which
+# power the real Splunk/Elastic adapters in adapters/splunk_hec.py and
+# adapters/elastic_bulk.py. Syslog/webhook output is not implemented.
 alerting:
   siem_output:
     enabled: true
@@ -364,6 +371,26 @@ alerting:
     # Suppress repeated identical alerts within this window to prevent alert fatigue
     window_seconds: 300
     max_identical_alerts: 3
+
+# ============================================================
+# REAL SIEM OUTPUT (flat keys, actually read by the scripts)
+# ============================================================
+# siem_output selects the destination: stdout | file | splunk | elastic
+# A failed or unconfigured splunk/elastic send always falls back to local
+# file output - a finding is never silently dropped.
+siem_output: "file"
+
+# --- Splunk HTTP Event Collector (adapters/splunk_hec.py) ---
+splunk_hec_url: ""                       # e.g. https://splunk.internal:8088/services/collector/event
+splunk_hec_token: ""                     # prefer "${SPLUNK_HEC_TOKEN}" to read from an env var; never commit a real token
+splunk_index: ""                         # optional; Splunk uses its default index if unset
+
+# --- Elasticsearch / OpenSearch _bulk API (adapters/elastic_bulk.py) ---
+elastic_url: ""                          # e.g. https://elastic.internal:9200
+elastic_index: "gsh-findings"
+elastic_api_key: ""                      # prefer "${ELASTIC_API_KEY}" to read from an env var; never commit a real key
+elastic_flush_size: 1                    # findings buffered before an automatic flush (1 = send immediately)
+elastic_flush_interval_seconds: 5        # also flush after this many seconds, even if flush_size isn't reached
 
 # ============================================================
 # EGRESS ALLOWLIST

@@ -1,5 +1,5 @@
 # Governed Security Hunting (GSH) Framework
-# Python Dependencies - v1.0.0-beta
+# Python Dependencies - v1.2.0
 #
 # Core dependencies are intentionally minimal.
 # The framework ships with stdlib-only fallbacks for all optional packages.
@@ -34,7 +34,10 @@ openai>=1.30.0
 # If not installed, the framework uses built-in pure-Python implementations.
 numpy>=1.26.0
 
-# HTTP request library (used by optional SIEM/webhook integrations)
+# HTTP request library, used by the Splunk HEC and Elastic bulk output
+# adapters (adapters/splunk_hec.py, adapters/elastic_bulk.py). If not
+# installed, siem_output: splunk|elastic logs a warning and falls back to
+# local file output.
 requests>=2.31.0
 
 # ---------------------------------------------------------------------------

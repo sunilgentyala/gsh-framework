@@ -289,7 +289,24 @@ def _flatten_strings(obj: Any, prefix: str = "") -> list:
 # scripts/gsh-sentinel-deploy.py, so downstream tooling has one alert schema)
 # ---------------------------------------------------------------------------
 
-def emit_event(event: dict, siem_output: str, output_dir: str) -> None:
+def emit_event(event: dict, siem_output: str, output_dir: str, policy: dict | None = None) -> None:
+    """
+    Emit a structured JSON event. For siem_output "splunk"/"elastic", tries
+    real delivery via adapters/siem_dispatch.py first; on any failure
+    (misconfiguration, network error, non-2xx response) falls back to
+    local file output rather than silently dropping the finding - a
+    security alert should never vanish just because a SIEM integration
+    is down.
+    """
+    if siem_output in ("splunk", "elastic"):
+        from adapters.siem_dispatch import dispatch_to_siem
+        if dispatch_to_siem(event, siem_output, policy or {}):
+            return
+        logger.warning(
+            f"Delivery to '{siem_output}' failed or is not configured; "
+            "writing event to local file instead so it is not lost."
+        )
+
     event_json = json.dumps(event, default=str)
     if siem_output == "stdout":
         print(event_json, file=sys.stderr)   # stdout is reserved for MCP traffic
@@ -299,11 +316,12 @@ def emit_event(event: dict, siem_output: str, output_dir: str) -> None:
         with open(output_path, "a") as f:
             f.write(event_json + "\n")
     else:
-        logger.warning(
-            f"SIEM output '{siem_output}' is not yet implemented for the MCP proxy "
-            "(see repo issues for Splunk/Elastic adapters). Falling back to file output."
-        )
-        emit_event(event, "file", output_dir)
+        if siem_output not in ("splunk", "elastic"):
+            logger.warning(f"Unknown SIEM output type '{siem_output}'. Falling back to file output.")
+        output_path = Path(output_dir) / "mcp-proxy-events.jsonl"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "a") as f:
+            f.write(event_json + "\n")
 
 
 class MCPPolicyEngine:
@@ -317,8 +335,9 @@ class MCPPolicyEngine:
                  session_id: str, output_dir: str, siem_output: str = "file"):
         self.server_id = server_id
         self.mode = mode
-        self.mcp_policy = {**DEFAULT_MCP_POLICY, **(policy.get("hunt_005", {}) if policy else {})}
-        self.actions = (policy or {}).get("actions", {
+        self.policy = policy or {}
+        self.mcp_policy = {**DEFAULT_MCP_POLICY, **self.policy.get("hunt_005", {})}
+        self.actions = self.policy.get("actions", {
             "passive": ["log"],
             "standard": ["log", "alert"],
             "aggressive": ["log", "alert", "block"],
@@ -359,7 +378,7 @@ class MCPPolicyEngine:
         return "LOGGED"
 
     def _emit(self, finding: dict) -> None:
-        emit_event(finding, self.siem_output, self.output_dir)
+        emit_event(finding, self.siem_output, self.output_dir, self.policy)
 
     def evaluate_tool_definitions(self, tools: list, baseline_path: str) -> tuple:
         """
@@ -609,15 +628,18 @@ class MCPStdioProxy:
 
     def __init__(self, server_cmd: list, server_id: str, mode: str,
                  policy: dict, baseline_path: str, output_dir: str,
-                 siem_output: str = "file", agent_id: str = "unknown-agent"):
+                 siem_output: str | None = None, agent_id: str = "unknown-agent"):
         self.server_cmd = server_cmd
         self.server_id = server_id
         self.mode = mode
         self.baseline_path = baseline_path
         self.agent_id = agent_id
+        # siem_output defaults to whatever the policy specifies; an explicit
+        # constructor argument (e.g. from a CLI flag) still wins if given.
+        resolved_siem_output = siem_output or (policy or {}).get("siem_output", "file")
         session_id = f"GSH-MCP-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
         self.engine = MCPPolicyEngine(server_id, mode, policy, session_id,
-                                      output_dir, siem_output)
+                                      output_dir, resolved_siem_output)
         self.proc = None
         self._stop = threading.Event()
 
@@ -642,6 +664,8 @@ class MCPStdioProxy:
             self._stop.set()
             if self.proc.poll() is None:
                 self.proc.terminate()
+            from adapters.siem_dispatch import flush_all
+            flush_all()  # send any buffered (not-yet-sent) SIEM findings before exit
 
         return self.proc.returncode or 0
 

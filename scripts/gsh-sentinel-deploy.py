@@ -47,6 +47,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from adapters.siem_dispatch import dispatch_to_siem, flush_all  # noqa: E402
+
 try:
     import yaml
 except ImportError:
@@ -151,21 +154,34 @@ def generate_session_id() -> str:
     return f"GSH-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
 
 
-def emit_event(event: dict, siem_output: str, output_dir: str) -> None:
-    """Emit a structured JSON event to configured SIEM destination."""
+def emit_event(event: dict, siem_output: str, output_dir: str, policy: dict | None = None) -> None:
+    """
+    Emit a structured JSON event to the configured SIEM destination. For
+    "splunk"/"elastic", tries real delivery via adapters/siem_dispatch.py
+    first; on any failure (misconfiguration, network error, non-2xx
+    response) falls back to local file output rather than silently
+    dropping the finding.
+    """
+    if siem_output in ("splunk", "elastic"):
+        if dispatch_to_siem(event, siem_output, policy or {}):
+            return
+        logger.warning(
+            f"Delivery to '{siem_output}' failed or is not configured; "
+            "writing event to local file instead so it is not lost."
+        )
+
     event_json = json.dumps(event, default=str)
 
     if siem_output == "stdout":
         print(event_json)
-    elif siem_output == "file":
+    else:
+        # "file" explicitly, or a fallback from an unknown/failed destination
+        if siem_output not in ("file", "splunk", "elastic"):
+            logger.warning(f"Unknown SIEM output type '{siem_output}'. Falling back to file output.")
         output_path = Path(output_dir) / "sentinel-events.jsonl"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "a") as f:
             f.write(event_json + "\n")
-    else:
-        # Extensible: add Splunk HEC, Elastic, QRadar integrations here
-        logger.warning(f"Unknown SIEM output type '{siem_output}'. Falling back to stdout.")
-        print(event_json)
 
 
 # ---------------------------------------------------------------------------
@@ -327,7 +343,7 @@ class SovereignSentinel:
             nist_controls=["DE.AE-02", "DE.CM-01", "RS.MI-01"],
             action_taken=action,
         )
-        emit_event(alert, self.siem_output, self.output_dir)
+        emit_event(alert, self.siem_output, self.output_dir, self.policy)
         return alert
 
     def evaluate_token_velocity(self, token_velocity_pm: float) -> dict | None:
@@ -352,7 +368,7 @@ class SovereignSentinel:
             nist_controls=["DE.AE-02", "DE.CM-01"],
             action_taken=action,
         )
-        emit_event(alert, self.siem_output, self.output_dir)
+        emit_event(alert, self.siem_output, self.output_dir, self.policy)
         return alert
 
     def evaluate_dns_query_rate(self, dns_queries_pm: float) -> dict | None:
@@ -377,7 +393,7 @@ class SovereignSentinel:
             nist_controls=["DE.CM-01", "DE.AE-04", "PR.DS-01"],
             action_taken=action,
         )
-        emit_event(alert, self.siem_output, self.output_dir)
+        emit_event(alert, self.siem_output, self.output_dir, self.policy)
         return alert
 
     def evaluate_behavioral_drift(self, drift_sigma: float,
@@ -407,7 +423,7 @@ class SovereignSentinel:
             nist_controls=["ID.RA-01", "DE.AE-02", "DE.CM-06"],
             action_taken=action,
         )
-        emit_event(alert, self.siem_output, self.output_dir)
+        emit_event(alert, self.siem_output, self.output_dir, self.policy)
         return alert
 
     def evaluate_unauthorized_tool(self, tool_name: str,
@@ -433,7 +449,7 @@ class SovereignSentinel:
             nist_controls=["PR.PS-04", "RS.AN-03"],
             action_taken=action,
         )
-        emit_event(alert, self.siem_output, self.output_dir)
+        emit_event(alert, self.siem_output, self.output_dir, self.policy)
         return alert
 
     def summary(self) -> dict:
@@ -573,7 +589,8 @@ def run_enforcement_mode(target: str, mode: str, policy: dict,
 
     summary = sentinel.summary()
     emit_event({"event_type": "SESSION_SUMMARY", **summary},
-               policy.get("siem_output", "stdout"), output_dir)
+               policy.get("siem_output", "stdout"), output_dir, policy)
+    flush_all()  # send any buffered (not-yet-sent) SIEM findings before exit
     logger.info(f"Session summary: {json.dumps(summary, indent=2)}")
 
 

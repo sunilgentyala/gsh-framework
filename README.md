@@ -31,7 +31,9 @@ The hunt playbooks, detection logic, thresholds, and policy schema are complete 
 
 **Hunt-005** (`adapters/mcp_proxy.py`, `scripts/gsh-mcp-proxy.py`) is different: it is a real MCP JSON-RPC stdio proxy that intercepts *actual* tool definitions and tool calls between a real MCP host and a real MCP server - approval-time schema hashing, drift detection, semantic poisoning scans, and per-call enforcement (permit/alert/block) all run against live traffic, not synthetic data. See `tests/test_mcp_proxy.py` for a subprocess-driven end-to-end test of the CLI. Known gaps: canary/response-asymmetry comparison and tool-return-value scanning are not implemented yet (see `playbooks/hunt-005-mcp-tool-poisoning.md` section 5.2 for details), and only the stdio transport is supported (not streamable HTTP/SSE MCP servers).
 
-See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for planned SIEM output adapters (Splunk, Elastic) and other integrations.
+**SIEM output** (`adapters/splunk_hec.py`, `adapters/elastic_bulk.py`) is also real: set `siem_output: splunk` or `siem_output: elastic` in your policy YAML (see `configs/sentinel-policy-default.yaml`) and both `gsh-sentinel-deploy.py` and `gsh-mcp-proxy.py` will send findings there via real HTTP requests (Splunk HEC / Elasticsearch `_bulk`). A failed or unconfigured send always falls back to local file output - a finding is never silently dropped. See `tests/test_siem_adapters.py`.
+
+See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for remaining integrations (LangChain callback adapter, Windows Event Log, SARIF reporting) and the Docker Compose demo.
 
 ---
 
