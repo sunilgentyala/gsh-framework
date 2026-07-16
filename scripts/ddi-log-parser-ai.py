@@ -279,8 +279,15 @@ def extract_subdomain(query: str) -> str:
 
 
 def is_allowlisted(query: str) -> bool:
-    base = extract_base_domain(query)
-    return any(query.endswith(allowed) for allowed in ALLOWLISTED_DOMAINS)
+    """True if query is (or is a subdomain of) an allowlisted base domain.
+
+    Uses a dot-boundary suffix match, not a raw string suffix match -
+    "evilcloudflare.com" must not match the "cloudflare.com" entry.
+    """
+    return any(
+        query == allowed or query.endswith("." + allowed)
+        for allowed in ALLOWLISTED_DOMAINS
+    )
 
 
 def check_high_entropy_subdomain(record: DnsRecord,
