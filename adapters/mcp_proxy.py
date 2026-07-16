@@ -161,12 +161,19 @@ def hash_tool_set(tools: list) -> dict:
 
 
 def build_snapshot(server_id: str, tools: list) -> dict:
+    """
+    tool_hashes drives drift detection (diff_snapshot compares hashes
+    only). The raw "tools" list is stored alongside it purely so a human
+    running `gsh baseline review` has actual descriptions/schemas to read
+    - reviewing a bare hash is not a meaningful approval step.
+    """
     return {
         "schema": SCHEMA_VERSION,
         "server_id": server_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "tool_count": len(tools),
         "tool_hashes": hash_tool_set(tools),
+        "tools": tools,
     }
 
 
@@ -197,6 +204,107 @@ def diff_snapshot(current: dict, baseline: dict) -> dict:
     added = [name for name in cur_hashes if name not in base_hashes]
     removed = [name for name in base_hashes if name not in cur_hashes]
     return {"drifted": drifted, "added": added, "removed": removed}
+
+
+# ---------------------------------------------------------------------------
+# Baseline approval governance (playbook 5.1 first-contact trust)
+#
+# A freshly captured snapshot is never itself the trust anchor - it starts
+# life as "unverified" and only becomes a trusted comparison point once an
+# operator explicitly approves it (gsh baseline approve). This closes the
+# gap where a compromised or malicious MCP server could establish its own
+# tool set as "the baseline" simply by being the first thing a proxy talks
+# to. See scripts/gsh-baseline.py for the capture/review/approve/verify CLI.
+# ---------------------------------------------------------------------------
+
+BASELINE_STATUS_UNVERIFIED = "unverified"
+BASELINE_STATUS_APPROVED = "approved"
+
+
+def compute_source_hash(tool_hashes: dict) -> str:
+    """
+    SHA-256 over the canonicalized tool_hashes mapping. Stored at approval
+    time and re-checked on every use so that hand-editing or re-capturing a
+    baseline file after it was approved invalidates the approval rather
+    than silently keeping it trusted.
+    """
+    canonical = json.dumps(tool_hashes, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def mark_unverified(snapshot: dict) -> dict:
+    """Attach an 'unverified' approval block to a freshly captured snapshot."""
+    snapshot["approval"] = {
+        "status": BASELINE_STATUS_UNVERIFIED,
+        "reviewer": None,
+        "approved_at": None,
+        "source_hash": None,
+        "signature": None,
+    }
+    return snapshot
+
+
+def is_baseline_approved(baseline: dict | None) -> bool:
+    """
+    True only if the baseline carries an 'approved' approval block whose
+    source_hash still matches its own tool_hashes. Baselines with no
+    approval block at all (e.g. snapshots captured before this governance
+    model existed) are treated as unverified, not approved - fail closed.
+    """
+    if not baseline:
+        return False
+    approval = baseline.get("approval")
+    if not approval or approval.get("status") != BASELINE_STATUS_APPROVED:
+        return False
+    expected_hash = compute_source_hash(baseline.get("tool_hashes", {}))
+    return approval.get("source_hash") == expected_hash
+
+
+def approve_baseline(path: str, reviewer: str, signature: str | None = None) -> dict:
+    """
+    Mark an already-captured baseline snapshot as approved. Raises
+    FileNotFoundError if no snapshot exists yet at path - capture must
+    happen first (gsh baseline capture), approval is a separate,
+    deliberate step.
+    """
+    baseline = load_snapshot(path)
+    if baseline is None:
+        raise FileNotFoundError(
+            f"No baseline snapshot found at '{path}'. Run 'gsh baseline capture' first."
+        )
+    baseline["approval"] = {
+        "status": BASELINE_STATUS_APPROVED,
+        "reviewer": reviewer,
+        "approved_at": datetime.now(timezone.utc).isoformat(),
+        "source_hash": compute_source_hash(baseline.get("tool_hashes", {})),
+        "signature": signature,
+    }
+    save_snapshot(baseline, path)
+    return baseline
+
+
+def verify_baseline(path: str) -> tuple[bool, str]:
+    """Returns (ok, message). ok is True only if an approved, untampered
+    baseline exists at path."""
+    baseline = load_snapshot(path)
+    if baseline is None:
+        return False, f"No baseline found at '{path}'."
+    approval = baseline.get("approval") or {}
+    if approval.get("status") != BASELINE_STATUS_APPROVED:
+        return False, (
+            f"Baseline at '{path}' exists but is not approved "
+            f"(status: {approval.get('status', 'unknown')})."
+        )
+    expected_hash = compute_source_hash(baseline.get("tool_hashes", {}))
+    if approval.get("source_hash") != expected_hash:
+        return False, (
+            f"Baseline at '{path}' has been modified since approval "
+            "(source hash mismatch). Re-approval required."
+        )
+    return True, (
+        f"Baseline at '{path}' is approved by {approval.get('reviewer')} "
+        f"on {approval.get('approved_at')} and matches its current content."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -383,28 +491,43 @@ class MCPPolicyEngine:
 
     def evaluate_tool_definitions(self, tools: list, baseline_path: str) -> tuple:
         """
-        Playbook 5.2/5.3 checks 1 and 2: definition drift + semantic scan.
-        Returns (verdict, findings). verdict is one of ALLOW / BLOCK.
+        Playbook 5.2/5.3 checks 1 and 2: baseline approval, definition
+        drift, and semantic scan. Returns (verdict, findings). verdict is
+        one of ALLOW / BLOCK.
+
+        A captured snapshot is never itself the trust anchor - see the
+        "Baseline approval governance" section above. In aggressive mode,
+        a missing or unapproved baseline is treated as a blocking finding
+        (defense in depth alongside MCPStdioProxy.run()'s startup refusal,
+        for callers that invoke this method directly). In passive/standard
+        mode it is logged/alerted but the connection still proceeds.
 
         The semantic scan (poisoning/invisible-content/cross-tool-reference
         checks) always runs, including on the very first connection to a
         server - a poisoned tool description must not be able to "become
         the trusted baseline" simply by being the first thing seen. Only
-        the drift *diff* is skipped when there is no prior snapshot to
+        the drift *diff* is skipped when there is no approved baseline to
         diff against, since drift is inherently a comparison.
         """
         findings = []
         current = build_snapshot(self.server_id, tools)
         baseline = load_snapshot(baseline_path)
+        approved = is_baseline_approved(baseline)
 
         if baseline is None:
-            save_snapshot(current, baseline_path)
+            save_snapshot(mark_unverified(current), baseline_path)
             logger.warning(
-                f"No approval-time snapshot found for '{self.server_id}'. "
-                f"Recording current {len(tools)} tool definition(s) as the trusted "
-                f"baseline at {baseline_path}. Review this file before treating it "
-                "as authoritative. The semantic scan below still applies to this "
-                "first connection."
+                f"No baseline found for '{self.server_id}'. Captured current "
+                f"{len(tools)} tool definition(s) as UNVERIFIED at {baseline_path}. "
+                "This snapshot is not trusted until an operator runs "
+                "'gsh baseline review' then 'gsh baseline approve'. The semantic "
+                "scan below still applies to this first connection."
+            )
+        elif not approved:
+            logger.warning(
+                f"Baseline for '{self.server_id}' at {baseline_path} exists but is "
+                "not approved (or was modified since approval). Treating as "
+                "unverified. Run 'gsh baseline review' then 'gsh baseline approve'."
             )
         else:
             diff = diff_snapshot(current, baseline)
@@ -418,7 +541,7 @@ class MCPPolicyEngine:
                     severity="MEDIUM",
                     description=(
                         f"Server '{self.server_id}' now exposes {len(diff['added'])} tool(s) "
-                        f"not present in the approval-time snapshot: {diff['added']}."
+                        f"not present in the approved baseline: {diff['added']}."
                     ),
                     evidence={"added_tools": diff["added"], "baseline_path": baseline_path},
                     action_taken=self._determine_action(),
@@ -430,12 +553,30 @@ class MCPPolicyEngine:
                     severity="CRITICAL",
                     description=(
                         f"Server '{self.server_id}' tool definitions changed since the "
-                        f"approval-time snapshot. Drifted: {diff['drifted']}, "
+                        f"approved baseline. Drifted: {diff['drifted']}, "
                         f"removed: {diff['removed']}. Possible post-approval rug pull."
                     ),
                     evidence={**diff, "baseline_path": baseline_path},
                     action_taken=self._determine_action(force_block=True),
                 ))
+
+        if not approved:
+            findings.append(self._build_finding(
+                threat_class="MCP Supply Chain / Unapproved Baseline",
+                severity="HIGH",
+                description=(
+                    f"Server '{self.server_id}' has no operator-approved baseline. "
+                    + (
+                        "Aggressive mode requires an approved baseline before any "
+                        "traffic from this server is trusted."
+                        if self.mode == "aggressive" else
+                        "Proceeding under alert; run 'gsh baseline capture' then "
+                        "'gsh baseline approve' to establish trust."
+                    )
+                ),
+                evidence={"baseline_path": baseline_path, "server_id": self.server_id},
+                action_taken=self._determine_action(force_block=(self.mode == "aggressive")),
+            ))
 
         other_names = [t.get("name", "") for t in tools]
         for tool in tools:
@@ -641,10 +782,22 @@ class MCPStdioProxy:
         session_id = f"GSH-MCP-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
         self.engine = MCPPolicyEngine(server_id, mode, policy, session_id,
                                       output_dir, resolved_siem_output)
-        self.proc = None
+        self.proc: subprocess.Popen[str] | None = None
         self._stop = threading.Event()
 
     def run(self) -> int:
+        if self.mode == "aggressive":
+            baseline = load_snapshot(self.baseline_path)
+            if not is_baseline_approved(baseline):
+                logger.error(
+                    f"Refusing to start: aggressive mode requires an approved "
+                    f"baseline for '{self.server_id}' at {self.baseline_path}. "
+                    "Run 'gsh baseline capture' then 'gsh baseline review' and "
+                    "'gsh baseline approve' before running this server in "
+                    "aggressive mode. The MCP server was not launched."
+                )
+                return 1
+
         logger.info(f"Launching MCP server: {' '.join(self.server_cmd)}")
         self.proc = subprocess.Popen(
             self.server_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -677,6 +830,8 @@ class MCPStdioProxy:
         sys.stdout.flush()
 
     def _host_to_server(self) -> None:
+        assert self.proc is not None, "proc must be started before _host_to_server runs"
+        assert self.proc.stdin is not None, "proc must be started with stdin=PIPE"
         for line in sys.stdin:
             if not line.strip():
                 continue
@@ -710,6 +865,8 @@ class MCPStdioProxy:
         self._stop.set()
 
     def _server_to_host(self) -> None:
+        assert self.proc is not None, "proc must be started before _server_to_host runs"
+        assert self.proc.stdout is not None, "proc must be started with stdout=PIPE"
         for line in self.proc.stdout:
             if not line.strip():
                 continue

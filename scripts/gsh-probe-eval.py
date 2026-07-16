@@ -662,11 +662,12 @@ def run_mcp_snapshot(args) -> int:
         logger.error(str(e))
         return 1
 
-    save_snapshot(snapshot, str(baseline_path))
+    save_snapshot(mark_unverified(snapshot), str(baseline_path))
     logger.info(
-        f"Snapshot recorded: {snapshot['tool_count']} tool(s) -> {baseline_path}. "
-        "Review this file before treating it as an authoritative approval baseline. "
-        "Use it with: python scripts/gsh-mcp-proxy.py --baseline "
+        f"Snapshot recorded as UNVERIFIED: {snapshot['tool_count']} tool(s) -> "
+        f"{baseline_path}. Run 'python scripts/gsh-baseline.py review --baseline "
+        f"{baseline_path}' then 'approve' before treating it as an authoritative "
+        "baseline. Use it with: python scripts/gsh-mcp-proxy.py --baseline "
         f"{baseline_path} --server-id {args.server} --server-cmd \"{args.server_cmd}\""
     )
     return 0

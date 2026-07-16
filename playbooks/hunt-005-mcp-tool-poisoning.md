@@ -72,15 +72,34 @@ MCP moved the agent attack surface from the prompt to the supply chain. A tool d
 
 ### 5.1 Approval-Time Baseline (one-time per server)
 
+A captured snapshot is never itself the trust anchor - it starts life as **UNVERIFIED** and must be explicitly reviewed and approved by an operator before it is trusted for drift comparison. This closes the gap where a compromised or malicious MCP server could otherwise establish its own tool set as "the baseline" simply by being the first thing a proxy talks to.
+
 ```bash
-python scripts/gsh-probe-eval.py \
-  --mode mcp-snapshot \
-  --server "corp-tools-mcp-01" \
-  --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data" \
-  --output reports/
+# 1. Capture - connect to the server, record its current tool definitions as UNVERIFIED
+python scripts/gsh-baseline.py capture \
+  --server-id "corp-tools-mcp-01" \
+  --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data"
+
+# 2. Review - print every tool's description/schema and semantic-scan findings for a human to read
+python scripts/gsh-baseline.py review --baseline baselines/mcp/corp-tools-mcp-01.json
+
+# 3. Approve - mark the reviewed snapshot as trusted (refuses if the scan flagged a tool, unless --force)
+python scripts/gsh-baseline.py approve \
+  --baseline baselines/mcp/corp-tools-mcp-01.json --reviewer "your-name-or-email"
+
+# 4. Verify (optional pre-flight check, e.g. in a deploy script)
+python scripts/gsh-baseline.py verify --baseline baselines/mcp/corp-tools-mcp-01.json
 ```
 
-The snapshot records a canonical hash per tool: `SHA-256(name || description || parameter_schema)`, written to `reports/baselines/mcp/corp-tools-mcp-01.json`. Any subsequent session whose loaded definitions do not match the snapshot raises a definition drift event.
+The snapshot records a canonical hash per tool: `SHA-256(name || description || parameter_schema)`, written to `baselines/mcp/corp-tools-mcp-01.json`, along with an `approval` block (status, reviewer, timestamp, and a content hash that invalidates the approval if the file is later re-captured or hand-edited). Any subsequent session whose loaded definitions do not match an *approved* snapshot raises a definition drift event.
+
+**Enforcement by mode** (see `adapters/mcp_proxy.py`'s "Baseline approval governance" section):
+
+| Mode | No approved baseline present |
+|---|---|
+| passive | Captures the snapshot as UNVERIFIED; logs only, never blocks |
+| standard | Captures/keeps UNVERIFIED; alerts every connection; still proxies traffic |
+| aggressive | **Refuses to launch the wrapped MCP server at all** until `gsh-baseline.py approve` has been run |
 
 ### 5.2 Continuous Session Checks
 

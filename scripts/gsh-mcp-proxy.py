@@ -18,10 +18,15 @@ Description:
     detection logic (see playbooks/hunt-005-mcp-tool-poisoning.md).
 
     On first connection to a server with no recorded baseline, this script
-    records the current tool definitions as the trusted approval-time
-    snapshot. Use --snapshot-only (or scripts/gsh-probe-eval.py --mode
-    mcp-snapshot) to create that baseline deliberately, under review,
-    before ever running in enforcement mode.
+    captures the current tool definitions as an UNVERIFIED snapshot - it is
+    never automatically trusted. In passive/standard mode the connection
+    still proceeds (under alert in standard mode); in aggressive mode this
+    script refuses to launch the server at all until the baseline has been
+    reviewed and approved. Use --snapshot-only (or scripts/gsh-probe-eval.py
+    --mode mcp-snapshot) to capture a baseline deliberately ahead of time,
+    then scripts/gsh-baseline.py review / approve it before running in
+    aggressive mode. See scripts/gsh-baseline.py --help for the full
+    capture -> review -> approve -> verify workflow.
 
     Known limitations: see the module docstring in adapters/mcp_proxy.py.
 
@@ -58,7 +63,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from adapters.mcp_proxy import (  # noqa: E402
     MCPStdioProxy, connect_and_snapshot, save_snapshot, MCPSnapshotError,
-    split_command,
+    split_command, mark_unverified,
 )
 
 try:
@@ -159,10 +164,11 @@ def main() -> int:
         except MCPSnapshotError as e:
             logger.error(str(e))
             return 1
-        save_snapshot(snapshot, baseline_path)
+        save_snapshot(mark_unverified(snapshot), baseline_path)
         logger.info(
-            f"Snapshot recorded: {snapshot['tool_count']} tool(s) -> {baseline_path}. "
-            "Review this file before relying on it for drift detection."
+            f"Snapshot recorded as UNVERIFIED: {snapshot['tool_count']} tool(s) -> "
+            f"{baseline_path}. Run 'gsh-baseline.py review --baseline {baseline_path}' "
+            "then 'gsh-baseline.py approve' before relying on it for enforcement."
         )
         return 0
 

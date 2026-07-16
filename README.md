@@ -30,7 +30,7 @@ The hunt playbooks, detection logic, thresholds, and policy schema are complete 
 
 **Hunt-001 through Hunt-004** (`scripts/gsh-sentinel-deploy.py`, `scripts/gsh-probe-eval.py`) implement the full baselining, drift-scoring, and ZTLV enforcement logic end-to-end, but ship with a **synthetic telemetry generator** (clearly marked `SIMULATION MODE` in the script output and `# Replace this block` in source) so you can see the detection logic run without a live environment first. Wiring `--target` to a real LLM gateway event stream is the integration step you complete before using this for actual enforcement.
 
-**Hunt-005** (`adapters/mcp_proxy.py`, `scripts/gsh-mcp-proxy.py`) is different: it is a real MCP JSON-RPC stdio proxy that intercepts *actual* tool definitions and tool calls between a real MCP host and a real MCP server - approval-time schema hashing, drift detection, semantic poisoning scans, and per-call enforcement (permit/alert/block) all run against live traffic, not synthetic data. See `tests/test_mcp_proxy.py` for a subprocess-driven end-to-end test of the CLI. Known gaps: canary/response-asymmetry comparison and tool-return-value scanning are not implemented yet (see `playbooks/hunt-005-mcp-tool-poisoning.md` section 5.2 for details), and only the stdio transport is supported (not streamable HTTP/SSE MCP servers).
+**Hunt-005** (`adapters/mcp_proxy.py`, `scripts/gsh-mcp-proxy.py`, `scripts/gsh-baseline.py`) is different: it is a real MCP JSON-RPC stdio proxy that intercepts *actual* tool definitions and tool calls between a real MCP host and a real MCP server - approval-time schema hashing, drift detection, semantic poisoning scans, and per-call enforcement (permit/alert/block) all run against live traffic, not synthetic data. A captured baseline is never auto-trusted: it starts as UNVERIFIED and only becomes a trusted comparison point through the `gsh-baseline.py capture -> review -> approve -> verify` workflow; `--mode aggressive` refuses to even launch the wrapped server without an approved baseline. See `tests/test_mcp_proxy.py` and `tests/test_gsh_baseline.py` for subprocess-driven end-to-end tests of both CLIs. Known gaps: canary/response-asymmetry comparison and tool-return-value scanning are not implemented yet (see `playbooks/hunt-005-mcp-tool-poisoning.md` section 5.2 for details), and only the stdio transport is supported (not streamable HTTP/SSE MCP servers).
 
 **SIEM output** (`adapters/splunk_hec.py`, `adapters/elastic_bulk.py`, `adapters/windows_eventlog.py`) is also real: set `siem_output: splunk`, `siem_output: elastic`, or `siem_output: windows_eventlog` in your policy YAML (see `configs/sentinel-policy-default.yaml`) and both `gsh-sentinel-deploy.py` and `gsh-mcp-proxy.py` will send findings there (Splunk HEC / Elasticsearch `_bulk` over real HTTP, or a registered source in the local Windows Application Event Log). A failed or unconfigured send always falls back to local file output - a finding is never silently dropped. The Windows Event Log adapter is Windows-only and requires `pywin32`; on any other platform (or without `pywin32`) it logs a warning and falls back like any other unconfigured destination. See `tests/test_siem_adapters.py` and `tests/test_windows_eventlog.py` (the latter includes a test that writes a real event and reads it back, not just a mocked one).
 
@@ -113,12 +113,17 @@ As shipped, this generates synthetic telemetry (`SIMULATION MODE`, logged at sta
 
 ### 4. Run the MCP Proxy (Hunt-005 - real enforcement, not simulated)
 
-Unlike step 3, this runs against real MCP traffic. First record an approval-time snapshot of the server's tool definitions:
+Unlike step 3, this runs against real MCP traffic. A captured baseline is never auto-trusted - capture it, review it, then approve it:
 
 ```bash
-python scripts/gsh-probe-eval.py --mode mcp-snapshot \
-  --server "corp-tools-mcp-01" \
+python scripts/gsh-baseline.py capture \
+  --server-id "corp-tools-mcp-01" \
   --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data"
+
+python scripts/gsh-baseline.py review --baseline baselines/mcp/corp-tools-mcp-01.json
+
+python scripts/gsh-baseline.py approve \
+  --baseline baselines/mcp/corp-tools-mcp-01.json --reviewer "your-name-or-email"
 ```
 
 Then configure your MCP host to launch the proxy instead of the real server directly:
@@ -128,10 +133,10 @@ python scripts/gsh-mcp-proxy.py \
   --server-cmd "npx -y @modelcontextprotocol/server-filesystem /srv/data" \
   --server-id "corp-tools-mcp-01" \
   --mode standard \
-  --baseline reports/baselines/mcp/corp-tools-mcp-01.json
+  --baseline baselines/mcp/corp-tools-mcp-01.json
 ```
 
-The proxy will alert on (or, in `--mode aggressive`, block) definition drift, poisoned tool descriptions, invisible Unicode content, and unauthorized tool calls. See `playbooks/hunt-005-mcp-tool-poisoning.md` for the full detection logic.
+The proxy will alert on (or, in `--mode aggressive`, block) definition drift, poisoned tool descriptions, invisible Unicode content, and unauthorized tool calls. **In `--mode aggressive`, the proxy refuses to launch the wrapped server at all unless the baseline above has been approved** - see `playbooks/hunt-005-mcp-tool-poisoning.md` section 5.1 for why, and section 5.2 for the full detection logic.
 
 ### 5. Wire a LangChain Agent to a Sentinel (real telemetry, alert-only)
 
