@@ -9,3 +9,8 @@ whitepaper/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Packaging build artifacts
+build/
+dist/
+*.egg-info/

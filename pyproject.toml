@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gsh-framework"
+version = "1.5.0"
+description = "Governed Security Hunting (GSH) Framework - autonomous agentic AI threat hunting: hunt playbooks, a real MCP proxy (Hunt-005), and SIEM/LangChain adapters."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Sunil Gentyala", email = "sunil.gentyala@ieee.org" },
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+]
+dependencies = [
+    "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+splunk = ["requests>=2.31.0"]
+elastic = ["requests>=2.31.0"]
+langchain = ["langchain-core>=0.3.0"]
+windows = ["pywin32>=306; sys_platform == 'win32'"]
+llm = ["openai>=1.30.0"]
+dev = [
+    "pytest>=8.0.0",
+    "ruff",
+    "mypy>=1.10.0",
+    "black>=24.0.0",
+]
+
+[project.urls]
+Homepage = "https://sunilgentyala.github.io/gsh-framework/"
+Repository = "https://github.com/sunilgentyala/gsh-framework"
+Issues = "https://github.com/sunilgentyala/gsh-framework/issues"
+
+[project.scripts]
+gsh-sentinel-deploy = "scripts._cli_shims:sentinel_deploy"
+gsh-mcp-proxy = "scripts._cli_shims:mcp_proxy"
+gsh-probe-eval = "scripts._cli_shims:probe_eval"
+gsh-baseline = "scripts._cli_shims:baseline"
+gsh-ddi-log-parser = "scripts._cli_shims:ddi_log_parser"
+
+[tool.setuptools]
+packages = ["adapters", "scripts"]

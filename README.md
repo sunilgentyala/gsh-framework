@@ -89,6 +89,19 @@ cd gsh-framework
 pip install -r requirements.txt
 ```
 
+**Alternative: install as a package.** The repo is also `pip`-installable from source (not yet published to PyPI, so install from the checkout, not `pip install gsh-framework`):
+
+```bash
+pip install .              # adapters + all CLIs, PyYAML only (no SIEM/LangChain/Windows extras)
+pip install ".[splunk]"    # + Splunk/Elastic HTTP output (adapters/splunk_hec.py, elastic_bulk.py)
+pip install ".[langchain]" # + LangChain callback adapter
+pip install ".[windows]"   # + Windows Event Log adapter (Windows only)
+pip install ".[llm]"       # + OpenAI-compatible client for gsh-probe-eval.py
+pip install ".[dev]"       # + pytest, ruff, mypy, black
+```
+
+This installs `gsh-sentinel-deploy`, `gsh-mcp-proxy`, `gsh-baseline`, `gsh-probe-eval`, and `gsh-ddi-log-parser` as commands (equivalent to `python scripts/<name>.py`), and makes `adapters` importable without manually adjusting `sys.path`. Extras can be combined, e.g. `pip install ".[splunk,langchain]"`.
+
 ### 2. Review the Sentinel Policy
 
 ```bash
@@ -182,12 +195,17 @@ A companion research paper covering the full technical rationale, design decisio
 ```
 gsh-framework/
 ├── README.md
+├── SECURITY.md
 ├── LICENSE
 ├── CITATION.cff
 ├── CONTRIBUTING.md
 ├── requirements.txt
+├── pyproject.toml                  # pip-installable package + console-script CLIs, extras
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # pytest + ruff + mypy across Python 3.10-3.13
 ├── adapters/
-│   ├── mcp_proxy.py                 # Real MCP JSON-RPC proxy (Hunt-005)
+│   ├── mcp_proxy.py                 # Real MCP JSON-RPC proxy (Hunt-005) + baseline approval governance
 │   ├── langchain_callback.py        # Real LangChain telemetry, alert-only (Hunt-001/004)
 │   ├── splunk_hec.py                # Real Splunk HTTP Event Collector output
 │   ├── elastic_bulk.py              # Real Elasticsearch/OpenSearch _bulk output
@@ -206,11 +224,15 @@ gsh-framework/
 ├── probes/
 │   └── standardized-probe-set-v1.json
 ├── scripts/
+│   ├── _cli_shims.py               # console-script entry points (pyproject.toml) for the scripts below
 │   ├── ddi-log-parser-ai.py
+│   ├── gsh-baseline.py             # capture/review/approve/verify CLI for MCP baseline governance
 │   ├── gsh-mcp-proxy.py            # CLI for adapters/mcp_proxy.py
 │   ├── gsh-probe-eval.py
 │   └── gsh-sentinel-deploy.py
 ├── tests/
+│   ├── test_ddi_log_parser.py
+│   ├── test_gsh_baseline.py
 │   ├── test_mcp_proxy.py
 │   ├── test_siem_adapters.py
 │   ├── test_windows_eventlog.py
