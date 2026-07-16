@@ -104,7 +104,6 @@ Start in passive mode to build a 7-day behavioral baseline, then move to standar
 python scripts/gsh-sentinel-deploy.py \
   --target "llm-gateway-01" \
   --mode passive \
-  --playbooks "hunt-001,hunt-002,hunt-003,hunt-004,hunt-005" \
   --policy configs/sentinel-policy-default.yaml \
   --baseline-window 7d
 ```
@@ -258,7 +257,7 @@ If you use the GSH Framework in your research, please cite:
 
 ## Security Vulnerabilities
 
-To report a vulnerability in the GSH Framework itself, email [sunil.gentyala@ieee.org](mailto:sunil.gentyala@ieee.org) with the subject `[GSH Security Vulnerability] - [brief description]`. Do not open a public GitHub Issue. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full responsible disclosure policy.
+To report a vulnerability in the GSH Framework itself, use [GitHub's private vulnerability reporting](https://github.com/sunilgentyala/gsh-framework/security/advisories/new) or email [sunil.gentyala@ieee.org](mailto:sunil.gentyala@ieee.org) with the subject `[GSH Security Vulnerability] - [brief description]`. Do not open a public GitHub Issue. See [SECURITY.md](SECURITY.md) for the full policy, supported versions, and response timeline.
 
 ---
 
