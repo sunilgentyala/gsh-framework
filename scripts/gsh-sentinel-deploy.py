@@ -113,6 +113,10 @@ def parse_duration(duration_str: str) -> int:
     """Convert duration string (e.g. 7d, 24h, 30m) to seconds."""
     unit_map = {"d": 86400, "h": 3600, "m": 60, "s": 1}
     duration_str = duration_str.strip().lower()
+    if not duration_str:
+        raise ValueError(
+            f"Invalid duration format: '{duration_str}'. Use formats like 7d, 24h, 30m, 60s."
+        )
     if duration_str[-1] in unit_map:
         try:
             return int(duration_str[:-1]) * unit_map[duration_str[-1]]
