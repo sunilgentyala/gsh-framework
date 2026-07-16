@@ -71,11 +71,10 @@ import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from adapters.mcp_proxy import (  # noqa: E402
-    connect_and_snapshot, save_snapshot, MCPSnapshotError, split_command,
+    connect_and_snapshot, save_snapshot, MCPSnapshotError, split_command, mark_unverified,
 )
 
 try:
@@ -212,7 +211,6 @@ class LLMClient:
         Send a completion request. Returns dict with:
             text, tokens, latency_ms, error (if any)
         """
-        start = time.monotonic()
         client = self._get_client()
 
         if client is not None:

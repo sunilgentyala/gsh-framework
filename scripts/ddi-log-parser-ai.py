@@ -45,18 +45,16 @@ Examples:
 
 import argparse
 import csv
-import io
 import json
 import logging
 import math
-import os
 import re
 import sys
 from collections import defaultdict, deque
 from datetime import datetime, timezone
-from ipaddress import ip_address, ip_network, IPv4Address, IPv4Network
+from ipaddress import ip_address, ip_network
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -255,7 +253,7 @@ def shannon_entropy(s: str) -> float:
     """Compute Shannon entropy (bits) of a string."""
     if not s:
         return 0.0
-    freq = defaultdict(int)
+    freq: defaultdict[str, int] = defaultdict(int)
     for c in s:
         freq[c] += 1
     n = len(s)
@@ -324,7 +322,7 @@ def check_long_label(record: DnsRecord) -> dict | None:
     if is_allowlisted(record.query):
         return None
     labels = record.query.split(".")
-    long_labels = [l for l in labels if len(l) > SUSPICIOUS_LABEL_LENGTH]
+    long_labels = [label for label in labels if len(label) > SUSPICIOUS_LABEL_LENGTH]
     if not long_labels:
         return None
     return {
@@ -333,7 +331,7 @@ def check_long_label(record: DnsRecord) -> dict | None:
         "src_ip": record.src_ip,
         "query": record.query,
         "long_labels": long_labels,
-        "max_label_length": max(len(l) for l in long_labels),
+        "max_label_length": max(len(label) for label in long_labels),
         "threshold": SUSPICIOUS_LABEL_LENGTH,
         "description": (
             f"DNS label(s) exceed {SUSPICIOUS_LABEL_LENGTH} characters: {long_labels}. "
@@ -529,7 +527,7 @@ def analyze(input_path: str, log_format: str, agent_cidrs: list,
     findings: list[dict] = []
     beaconing_detector = BeaconingDetector(window_seconds, query_rate_threshold)
 
-    stats = {
+    stats: dict[str, Any] = {
         "total_records_parsed": 0,
         "records_from_agent_ips": 0,
         "unique_source_ips": set(),

@@ -38,7 +38,6 @@ Examples:
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 import uuid
@@ -70,7 +69,7 @@ logger = logging.getLogger("gsh-sentinel")
 
 VALID_MODES = ("passive", "standard", "aggressive")
 
-DEFAULT_POLICY = {
+DEFAULT_POLICY: dict[str, Any] = {
     "organization": "default-org",
     "sentinel_version": "1.5.0",
     "enforcement_mode": "standard",

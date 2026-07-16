@@ -80,10 +80,10 @@ try:
     _LANGCHAIN_AVAILABLE = True
 except ImportError:
     try:
-        from langchain.callbacks.base import BaseCallbackHandler  # legacy package layout
+        from langchain.callbacks.base import BaseCallbackHandler  # type: ignore[no-redef]  # legacy package layout
         _LANGCHAIN_AVAILABLE = True
     except ImportError:
-        BaseCallbackHandler = object
+        BaseCallbackHandler = object  # type: ignore[misc, assignment]
         _LANGCHAIN_AVAILABLE = False
 
 logger = logging.getLogger("gsh-langchain-adapter")

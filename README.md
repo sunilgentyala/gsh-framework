@@ -1,5 +1,6 @@
 # Governed Security Hunting (GSH) Framework
 
+[![CI](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.5.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
 [![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
