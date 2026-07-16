@@ -90,7 +90,7 @@ def test_source_registration_failure_is_caught_not_raised(monkeypatch, caplog):
     monkeypatch.setattr(weventlog, "_PYWIN32_AVAILABLE", True)
     mock_util = MagicMock()
     mock_util.AddSourceToRegistry.side_effect = PermissionError("access denied")
-    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util)
+    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util, raising=False)
 
     adapter = WindowsEventLogAdapter(source="GSH-Test")
     result = adapter.send(SAMPLE_FINDING)
@@ -102,7 +102,7 @@ def test_report_event_failure_is_caught_not_raised(monkeypatch, caplog):
     monkeypatch.setattr(weventlog, "_PYWIN32_AVAILABLE", True)
     mock_util = MagicMock()
     mock_util.ReportEvent.side_effect = OSError("write failed")
-    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util)
+    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util, raising=False)
 
     adapter = WindowsEventLogAdapter(source="GSH-Test")
     result = adapter.send(SAMPLE_FINDING)
@@ -113,7 +113,7 @@ def test_report_event_failure_is_caught_not_raised(monkeypatch, caplog):
 def test_send_success_calls_report_event_with_correct_event_type(monkeypatch):
     monkeypatch.setattr(weventlog, "_PYWIN32_AVAILABLE", True)
     mock_util = MagicMock()
-    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util)
+    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util, raising=False)
 
     adapter = WindowsEventLogAdapter(source="GSH-Test")
     result = adapter.send(SAMPLE_FINDING)  # severity CRITICAL
@@ -131,7 +131,7 @@ def test_send_success_calls_report_event_with_correct_event_type(monkeypatch):
 def test_source_registered_only_once_across_multiple_sends(monkeypatch):
     monkeypatch.setattr(weventlog, "_PYWIN32_AVAILABLE", True)
     mock_util = MagicMock()
-    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util)
+    monkeypatch.setattr(weventlog, "win32evtlogutil", mock_util, raising=False)
 
     adapter = WindowsEventLogAdapter(source="GSH-Test")
     adapter.send(SAMPLE_FINDING)
