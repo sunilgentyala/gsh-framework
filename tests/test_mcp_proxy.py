@@ -255,6 +255,78 @@ def test_engine_allows_known_tool_with_clean_arguments(tmp_path):
     assert findings == []
 
 
+def test_engine_blocks_tool_call_before_definitions_ever_evaluated(tmp_path):
+    """
+    Regression test: MCPPolicyEngine used to initialize approved_tools as
+    set() (falsy), so `if self.approved_tools and ...` silently skipped the
+    unauthorized-tool check on any tools/call that arrived before the first
+    tools/list response was ever evaluated - e.g. a host that races ahead,
+    or one running against evaluate_tool_call() directly. That call must be
+    fail-closed (blocked in aggressive mode), not silently allowed through
+    with an empty findings list.
+    """
+    engine = MCPPolicyEngine("srv", "aggressive", TEST_POLICY, "SESSION-RACE-1",
+                             str(tmp_path), siem_output="file")
+    verdict, findings = engine.evaluate_tool_call("delete_everything", "agent-1", {})
+    assert verdict == "BLOCK"
+    assert findings != []
+    assert findings[0]["threat_class"] == "Rogue Agent / Tool Call Before Definitions Evaluated"
+
+
+def test_engine_blocks_unauthorized_call_when_zero_tools_were_approved(tmp_path):
+    """
+    A server whose approved tool set is legitimately empty (it exposed zero
+    tools at evaluation time) must still reject any tool call - approved_tools
+    == set() must not be treated the same as "not yet evaluated" (None).
+    """
+    baseline_path = tmp_path / "baseline.json"
+    _approved_baseline(baseline_path, [], server_id="srv")
+    engine = MCPPolicyEngine("srv", "aggressive", TEST_POLICY, "SESSION-RACE-2",
+                             str(tmp_path), siem_output="file")
+    verdict, findings = engine.evaluate_tool_definitions([], str(baseline_path))
+    assert verdict == "ALLOW"
+    assert engine.approved_tools == set()
+
+    verdict, findings = engine.evaluate_tool_call("anything", "agent-1", {})
+    assert verdict == "BLOCK"
+    assert any(f["threat_class"] == "Rogue Agent / Unauthorized MCP Tool Invocation"
+              for f in findings)
+
+
+def test_engine_alert_ids_unique_under_concurrent_findings(tmp_path):
+    """
+    Regression test: _build_finding()'s self.alert_count += 1 is a
+    read-modify-write on shared state, and evaluate_tool_definitions() /
+    evaluate_tool_call() run on different proxy threads in production
+    (MCPStdioProxy._server_to_host / _host_to_server). Without a lock,
+    concurrent findings could collide on the same alert_count value and
+    produce duplicate alert_ids.
+    """
+    baseline_path = tmp_path / "baseline.json"
+    _approved_baseline(baseline_path, CLEAN_TOOLS)
+    engine = MCPPolicyEngine("srv", "standard", TEST_POLICY, "SESSION-RACE-3",
+                             str(tmp_path), siem_output="file")
+    engine.evaluate_tool_definitions(CLEAN_TOOLS, str(baseline_path))
+
+    all_alert_ids: list = []
+    ids_lock = threading.Lock()
+
+    def _hammer():
+        for _ in range(200):
+            _, findings = engine.evaluate_tool_call("nonexistent_tool", "agent-x", {})
+            with ids_lock:
+                all_alert_ids.extend(f["alert_id"] for f in findings)
+
+    threads = [threading.Thread(target=_hammer) for _ in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(all_alert_ids) == len(set(all_alert_ids)), "duplicate alert_id under concurrency"
+    assert len(all_alert_ids) == 8 * 200
+
+
 def test_engine_blocks_calls_to_quarantined_server(tmp_path):
     baseline_path = tmp_path / "baseline.json"
     _approved_baseline(baseline_path, CLEAN_TOOLS)

@@ -455,15 +455,24 @@ class MCPPolicyEngine:
         self.output_dir = output_dir
         self.siem_output = siem_output
         self.alert_count = 0
-        self.approved_tools: set = set()
+        # None means "no tools/list has been evaluated yet for this server" -
+        # distinct from set() (evaluated, and zero tools were approved). Both
+        # evaluate_tool_definitions() and evaluate_tool_call() are invoked from
+        # different proxy threads (_server_to_host and _host_to_server
+        # respectively - see MCPStdioProxy), so this and the two flags below
+        # are read/written under self._lock rather than as bare attributes.
+        self.approved_tools: set | None = None
         self.quarantined = False
+        self._lock = threading.Lock()
 
     def _build_finding(self, threat_class: str, severity: str, description: str,
                        evidence: dict, action_taken: str) -> dict:
-        self.alert_count += 1
+        with self._lock:
+            self.alert_count += 1
+            alert_id = f"{self.session_id}-{self.alert_count:04d}"
         return {
             "schema": "GSH-Alert-v1",
-            "alert_id": f"{self.session_id}-{self.alert_count:04d}",
+            "alert_id": alert_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "target": self.server_id,
             "enforcement_mode": self.mode,
@@ -614,22 +623,32 @@ class MCPPolicyEngine:
             self._emit(f)
 
         overall_block = any(f["action_taken"] == "BLOCKED" for f in findings)
-        if overall_block:
-            self.quarantined = True
-            self.approved_tools = set()
-            return "BLOCK", findings
+        with self._lock:
+            if overall_block:
+                self.quarantined = True
+                self.approved_tools = set()
+            else:
+                self.approved_tools = set(current["tool_hashes"].keys())
 
-        self.approved_tools = set(current["tool_hashes"].keys())
-        return "ALLOW", findings
+        return ("BLOCK" if overall_block else "ALLOW"), findings
 
     def evaluate_tool_call(self, tool_name: str, agent_id: str, arguments: dict) -> tuple:
         """
         Playbook 5.2 check 4: invocation inspection. Returns (verdict, findings).
         verdict is one of ALLOW / BLOCK.
+
+        Reads a consistent (quarantined, approved_tools) snapshot under
+        self._lock: evaluate_tool_definitions() runs on the server->host
+        thread and can flip both between this method's checks otherwise
+        (see MCPStdioProxy._server_to_host / _host_to_server).
         """
         findings = []
 
-        if self.quarantined:
+        with self._lock:
+            quarantined = self.quarantined
+            approved_tools = self.approved_tools
+
+        if quarantined:
             findings.append(self._build_finding(
                 threat_class="MCP Supply Chain / Call to Quarantined Server",
                 severity="CRITICAL",
@@ -643,7 +662,29 @@ class MCPPolicyEngine:
             self._emit(findings[-1])
             return "BLOCK", findings
 
-        if self.approved_tools and tool_name not in self.approved_tools:
+        if approved_tools is None:
+            # No tools/list response has ever been evaluated for this server
+            # (e.g. a host that calls tools/call before/without tools/list,
+            # or a race between a fast host and the evaluation thread).
+            # Previously approved_tools started as set(), which is falsy, so
+            # this unauthorized-tool check was silently skipped entirely on
+            # the very first call - fail closed instead.
+            findings.append(self._build_finding(
+                threat_class="Rogue Agent / Tool Call Before Definitions Evaluated",
+                severity="CRITICAL",
+                description=(
+                    f"Agent '{agent_id}' invoked tool '{tool_name}' on server "
+                    f"'{self.server_id}' before any tools/list response for this "
+                    "server was evaluated - no approved tool set exists yet."
+                ),
+                evidence={"tool_name": tool_name, "agent_id": agent_id},
+                action_taken=self._determine_action(force_block=True),
+            ))
+            self._emit(findings[-1])
+            blocked = findings[-1]["action_taken"] == "BLOCKED"
+            return ("BLOCK" if blocked else "ALLOW"), findings
+
+        if tool_name not in approved_tools:
             findings.append(self._build_finding(
                 threat_class="Rogue Agent / Unauthorized MCP Tool Invocation",
                 severity="CRITICAL",
@@ -652,7 +693,7 @@ class MCPPolicyEngine:
                     f"'{self.server_id}', which is not in the last-validated tool set."
                 ),
                 evidence={"tool_name": tool_name, "agent_id": agent_id,
-                         "approved_tools": sorted(self.approved_tools)},
+                         "approved_tools": sorted(approved_tools)},
                 action_taken=self._determine_action(force_block=True),
             ))
 

@@ -24,6 +24,7 @@ Description:
 """
 
 import logging
+import threading
 
 from adapters.elastic_bulk import ElasticBulkAdapter
 from adapters.splunk_hec import SplunkHECAdapter
@@ -31,6 +32,11 @@ from adapters.windows_eventlog import WindowsEventLogAdapter
 
 logger = logging.getLogger("gsh-siem-dispatch")
 
+# adapters/mcp_proxy.py's MCPStdioProxy calls dispatch_to_siem() from two
+# threads (_host_to_server and _server_to_host); without a lock, the first
+# finding from each thread could race past the `adapter is None` check
+# together and construct two adapter instances for the same destination.
+_cache_lock = threading.Lock()
 _adapter_cache: dict = {}
 
 
@@ -54,39 +60,42 @@ def dispatch_to_siem(finding: dict, siem_output: str, policy: dict) -> bool:
 
     if siem_output == "splunk":
         key = _cache_key("splunk", policy)
-        adapter = _adapter_cache.get(key)
-        if adapter is None:
-            adapter = SplunkHECAdapter(
-                hec_url=policy.get("splunk_hec_url", ""),
-                hec_token=policy.get("splunk_hec_token", ""),
-                index=policy.get("splunk_index", ""),
-            )
-            _adapter_cache[key] = adapter
+        with _cache_lock:
+            adapter = _adapter_cache.get(key)
+            if adapter is None:
+                adapter = SplunkHECAdapter(
+                    hec_url=policy.get("splunk_hec_url", ""),
+                    hec_token=policy.get("splunk_hec_token", ""),
+                    index=policy.get("splunk_index", ""),
+                )
+                _adapter_cache[key] = adapter
         return adapter.send(finding)
 
     if siem_output == "elastic":
         key = _cache_key("elastic", policy)
-        adapter = _adapter_cache.get(key)
-        if adapter is None:
-            adapter = ElasticBulkAdapter(
-                es_url=policy.get("elastic_url", ""),
-                index=policy.get("elastic_index", "gsh-findings"),
-                api_key=policy.get("elastic_api_key", ""),
-                flush_size=int(policy.get("elastic_flush_size", 1)),
-                flush_interval_seconds=float(policy.get("elastic_flush_interval_seconds", 5.0)),
-            )
-            _adapter_cache[key] = adapter
+        with _cache_lock:
+            adapter = _adapter_cache.get(key)
+            if adapter is None:
+                adapter = ElasticBulkAdapter(
+                    es_url=policy.get("elastic_url", ""),
+                    index=policy.get("elastic_index", "gsh-findings"),
+                    api_key=policy.get("elastic_api_key", ""),
+                    flush_size=int(policy.get("elastic_flush_size", 1)),
+                    flush_interval_seconds=float(policy.get("elastic_flush_interval_seconds", 5.0)),
+                )
+                _adapter_cache[key] = adapter
         return adapter.add(finding)
 
     if siem_output == "windows_eventlog":
         key = _cache_key("windows_eventlog", policy)
-        adapter = _adapter_cache.get(key)
-        if adapter is None:
-            adapter = WindowsEventLogAdapter(
-                source=policy.get("windows_eventlog_source", "GSH-Sentinel"),
-                log_type=policy.get("windows_eventlog_type", "Application"),
-            )
-            _adapter_cache[key] = adapter
+        with _cache_lock:
+            adapter = _adapter_cache.get(key)
+            if adapter is None:
+                adapter = WindowsEventLogAdapter(
+                    source=policy.get("windows_eventlog_source", "GSH-Sentinel"),
+                    log_type=policy.get("windows_eventlog_type", "Application"),
+                )
+                _adapter_cache[key] = adapter
         return adapter.send(finding)
 
     return False
@@ -99,11 +108,14 @@ def flush_all() -> None:
     blocks in adapters/mcp_proxy.py's MCPStdioProxy.run() and
     scripts/gsh-sentinel-deploy.py's main().
     """
-    for adapter in _adapter_cache.values():
+    with _cache_lock:
+        adapters = list(_adapter_cache.values())
+    for adapter in adapters:
         if hasattr(adapter, "flush"):
             adapter.flush()
 
 
 def reset_cache() -> None:
     """Test-only: clear cached adapter instances between test cases."""
-    _adapter_cache.clear()
+    with _cache_lock:
+        _adapter_cache.clear()
