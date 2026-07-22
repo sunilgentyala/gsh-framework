@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/sunilgentyala/gsh-framework/security/advisories/new
+    about: Do not open a public issue for security vulnerabilities - see SECURITY.md
+  - name: Questions and Discussion
+    url: https://github.com/sunilgentyala/gsh-framework/discussions
+    about: Ask a question or start a discussion that isn't a bug report or a concrete proposal

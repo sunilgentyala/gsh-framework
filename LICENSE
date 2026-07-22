@@ -196,9 +196,9 @@
 
 -------------------------------------------------------------------------------
 
-ADDITIONAL NOTICE — Research Artifact Usage
+ADDITIONAL NOTICE - Research Artifact Usage
 
-The Gentyala-Sovereign Hunt (GSH) Framework is provided as an open-source
+The Governed Security Hunting (GSH) Framework is provided as an open-source
 research artifact for defensive cybersecurity purposes. The detection logic,
 playbooks, and tooling in this repository are designed exclusively for
 authorized security monitoring of AI systems within environments the user
@@ -222,6 +222,6 @@ https://creativecommons.org/licenses/by/4.0/
 You are free to share and adapt the documentation for any purpose, provided
 appropriate attribution is given to the original author:
 
-  Gentyala, S. (2026). The Gentyala-Sovereign Hunt (GSH): An Autonomous
-  Agentic Framework for Defending the Cognitive Cyber Domain.
-  https://github.com/[your-handle]/gsh-framework
+  Gentyala, S. (2026). The Governed Security Hunting (GSH) Framework: An
+  Autonomous Agentic Framework for Defending the Cognitive Cyber Domain.
+  https://github.com/sunilgentyala/gsh-framework

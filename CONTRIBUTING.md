@@ -62,11 +62,11 @@ All contributors are expected to engage professionally and constructively. This 
 Before writing code or a playbook, open a GitHub Issue to describe what you want to contribute and why. This prevents duplicate effort and allows the maintainers to provide early guidance on whether the contribution fits the project's direction.
 
 Use the appropriate issue template:
-- **New Playbook Proposal** — for new hunt playbooks
-- **Threshold Refinement** — for changes to existing detection thresholds
-- **Integration Adapter** — for new platform integrations
-- **Bug Report** — for errors in existing detection logic or documentation
-- **General Enhancement** — for anything else
+- **New Playbook Proposal** - for new hunt playbooks
+- **Threshold Refinement** - for changes to existing detection thresholds
+- **Integration Adapter** - for new platform integrations
+- **Bug Report** - for errors in existing detection logic or documentation
+- **General Enhancement** - for anything else
 
 ### Step 2: Fork and Branch
 
@@ -111,17 +111,17 @@ Submit a Pull Request from your branch to `main`. Reference the Issue number in 
 
 All hunt playbooks must follow the GSH Playbook Template structure. The required sections are:
 
-1. **Metadata block** — Framework version, threat class, severity, author contact, NIST CSF 2.0 mapping, MITRE ATLAS mapping, last updated date
-2. **Threat Hypothesis** — A single declarative statement of the threat condition the playbook detects, written in the present tense
-3. **Threat Profile** — Tabular format covering threat actor, attack vector, target asset, business impact, and detection difficulty
-4. **Behavioral Indicators** — Organized into subsections by signal type (tool call, network, infrastructure, etc.)
-5. **Data Sources Required** — Tabular format with source, purpose, and collection method
-6. **Detection Logic** — Includes Sentinel deployment command, at least one Python detection function, and a threshold reference table
-7. **Triage Decision Tree** — ASCII art decision tree following the established GSH format
-8. **Response Actions** — Separated into Immediate (automated), Short-Term (human analyst), and Long-Term (post-incident)
-9. **False Positive Considerations** — At least three documented false positive scenarios with mitigations
-10. **NIST CSF 2.0 and MITRE ATLAS Mapping** — Full tabular mapping of each detection signal
-11. **References** — Minimum three, maximum eight, all verified and accessible
+1. **Metadata block** - Framework version, threat class, severity, author contact, NIST CSF 2.0 mapping, MITRE ATLAS mapping, last updated date
+2. **Threat Hypothesis** - A single declarative statement of the threat condition the playbook detects, written in the present tense
+3. **Threat Profile** - Tabular format covering threat actor, attack vector, target asset, business impact, and detection difficulty
+4. **Behavioral Indicators** - Organized into subsections by signal type (tool call, network, infrastructure, etc.)
+5. **Data Sources Required** - Tabular format with source, purpose, and collection method
+6. **Detection Logic** - Includes Sentinel deployment command, at least one Python detection function, and a threshold reference table
+7. **Triage Decision Tree** - ASCII art decision tree following the established GSH format
+8. **Response Actions** - Separated into Immediate (automated), Short-Term (human analyst), and Long-Term (post-incident)
+9. **False Positive Considerations** - At least three documented false positive scenarios with mitigations
+10. **NIST CSF 2.0 and MITRE ATLAS Mapping** - Full tabular mapping of each detection signal
+11. **References** - Minimum three, maximum eight, all verified and accessible
 
 **Naming convention:** `hunt-{NNN}-{threat-class-slug}.md` where NNN is a zero-padded three-digit number.
 
@@ -231,7 +231,7 @@ If you discover a security vulnerability in the GSH framework itself (including 
 Report security vulnerabilities directly to the project maintainer:
 
 - sunil.gentyala@ieee.org
-- Subject line: `[GSH Security Vulnerability] — [brief description]`
+- Subject line: `[GSH Security Vulnerability] - [brief description]`
 
 Include a description of the vulnerability, the potential impact, and steps to reproduce. You will receive a response within 72 hours. Responsible disclosure will be acknowledged in the project's security advisory.
 
@@ -250,7 +250,7 @@ If you use the GSH framework, its playbooks, or its detection logic in your rese
                   for Defending the Cognitive Cyber Domain},
   year         = {2026},
   howpublished = {Open Source Research Artifact, GitHub},
-  url          = {https://github.com/[your-handle]/gsh-framework}
+  url          = {https://github.com/sunilgentyala/gsh-framework}
 }
 ```
 
