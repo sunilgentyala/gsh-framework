@@ -36,18 +36,18 @@ Examples:
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
 import time
 import uuid
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from adapters.siem_dispatch import dispatch_to_siem, flush_all  # noqa: E402
+from adapters.siem_dispatch import dispatch_to_siem, flush_all
 
 try:
     import yaml
@@ -674,8 +674,8 @@ def main() -> int:
     except ValueError as e:
         logger.error(str(e))
         return 1
-    except Exception as e:
-        logger.error(f"Fatal error: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Fatal error")
         return 1
 
     return 0

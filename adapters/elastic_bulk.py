@@ -124,7 +124,7 @@ class ElasticBulkAdapter:
                 f"{self.es_url}/_bulk", data=body, headers=headers,
                 verify=self.verify_ssl, timeout=self.timeout_seconds,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - adapter must degrade, never crash the caller
             logger.warning(f"Elastic bulk send failed ({type(e).__name__}): {e}")
             return False
 
@@ -137,7 +137,7 @@ class ElasticBulkAdapter:
 
         try:
             result = response.json()
-        except Exception:
+        except Exception:  # noqa: BLE001 - unparseable body on a 2xx is still a delivered write
             return True  # 2xx with an unparseable body - treat as delivered
 
         if result.get("errors"):

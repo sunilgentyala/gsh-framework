@@ -57,10 +57,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adapters.mcp_proxy import (  # noqa: E402
-    connect_and_snapshot, save_snapshot, load_snapshot, mark_unverified,
-    approve_baseline, verify_baseline, semantic_scan, MCPSnapshotError,
+from adapters.mcp_proxy import (
+    MCPSnapshotError,
+    approve_baseline,
+    connect_and_snapshot,
+    load_snapshot,
+    mark_unverified,
+    save_snapshot,
+    semantic_scan,
     split_command,
+    verify_baseline,
 )
 
 LOG_FORMAT = "%(asctime)s [%(levelname)s] [GSH-Baseline] %(message)s"

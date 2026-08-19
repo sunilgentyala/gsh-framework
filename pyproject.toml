@@ -36,7 +36,7 @@ windows = ["pywin32>=306; sys_platform == 'win32'"]
 llm = ["openai>=1.30.0"]
 dev = [
     "pytest>=8.0.0",
-    "ruff",
+    "ruff==0.16.3",
     "mypy>=1.10.0",
     "black>=24.0.0",
 ]
@@ -55,3 +55,9 @@ gsh-ddi-log-parser = "scripts._cli_shims:ddi_log_parser"
 
 [tool.setuptools]
 packages = ["adapters", "scripts"]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts/*.py are standalone CLI entry points invoked via the console-script
+# shims in [project.scripts] above, never imported as modules - hyphenated
+# names are intentional and match the gsh-* command names.
+"scripts/*.py" = ["N999"]

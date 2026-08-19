@@ -23,10 +23,13 @@ langchain_core = pytest.importorskip(
     "langchain_core", reason="langchain-core not installed; adapters/langchain_callback.py is optional"
 )
 
-from langchain_core.language_models.fake import FakeListLLM  # noqa: E402
-from langchain_core.tools import tool  # noqa: E402
+from langchain_core.language_models.fake import FakeListLLM
+from langchain_core.tools import tool
 
-from adapters.langchain_callback import GSHCallbackHandler, _shannon_entropy  # noqa: E402
+from adapters.langchain_callback import (
+    GSHCallbackHandler,
+    _shannon_entropy,
+)
 
 
 @tool

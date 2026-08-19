@@ -51,10 +51,11 @@ import math
 import re
 import sys
 from collections import defaultdict, deque
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from ipaddress import ip_address, ip_network
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -103,7 +104,7 @@ NIST_HUNT002 = ["DE.CM-01", "DE.AE-04", "PR.DS-01"]
 
 class DnsRecord:
     """Normalized DNS query record from any supported log format."""
-    __slots__ = ("timestamp", "src_ip", "query", "qtype", "response", "raw")
+    __slots__ = ("qtype", "query", "raw", "response", "src_ip", "timestamp")
 
     def __init__(self, timestamp: datetime, src_ip: str, query: str,
                  qtype: str, response: str, raw: str = ""):
@@ -205,7 +206,8 @@ def parse_csv_format(lines: Iterator[str]) -> Iterator[DnsRecord]:
                 response=row.get("response", ""),
                 raw=str(row),
             )
-        except Exception:
+        except Exception as e:  # noqa: BLE001 - skip malformed rows, keep parsing the rest
+            logger.debug(f"Skipping malformed row ({type(e).__name__}: {e}): {row}")
             continue
 
 
@@ -233,7 +235,8 @@ def parse_json_format(lines: Iterator[str]) -> Iterator[DnsRecord]:
                 response=obj.get("response", ""),
                 raw=line,
             )
-        except Exception:
+        except Exception as e:  # noqa: BLE001 - skip malformed rows, keep parsing the rest
+            logger.debug(f"Skipping malformed line ({type(e).__name__}: {e}): {line}")
             continue
 
 

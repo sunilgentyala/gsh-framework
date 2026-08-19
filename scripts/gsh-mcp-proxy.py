@@ -61,9 +61,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adapters.mcp_proxy import (  # noqa: E402
-    MCPStdioProxy, connect_and_snapshot, save_snapshot, MCPSnapshotError,
-    split_command, mark_unverified,
+from adapters.mcp_proxy import (
+    MCPSnapshotError,
+    MCPStdioProxy,
+    connect_and_snapshot,
+    mark_unverified,
+    save_snapshot,
+    split_command,
 )
 
 try:

@@ -73,8 +73,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from adapters.mcp_proxy import (  # noqa: E402
-    connect_and_snapshot, save_snapshot, MCPSnapshotError, split_command, mark_unverified,
+from adapters.mcp_proxy import (
+    MCPSnapshotError,
+    connect_and_snapshot,
+    mark_unverified,
+    save_snapshot,
+    split_command,
 )
 
 try:
@@ -234,15 +238,15 @@ class LLMClient:
             text = response.choices[0].message.content or ""
             tokens = response.usage.completion_tokens if response.usage else count_tokens_approx(text)
             return {"text": text, "tokens": tokens, "latency_ms": latency_ms, "error": None}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - any provider failure is surfaced via the "error" field
             latency_ms = int((time.monotonic() - start) * 1000)
             return {"text": "", "tokens": 0, "latency_ms": latency_ms, "error": str(e)}
 
     def _complete_via_http(self, system_prompt: str, user_prompt: str,
                            timeout: int) -> dict:
         """Pure stdlib HTTP fallback for OpenAI-compatible /chat/completions."""
-        import urllib.request
         import urllib.error
+        import urllib.request
 
         payload = json.dumps({
             "model": self.model,
@@ -272,7 +276,7 @@ class LLMClient:
                 text = body["choices"][0]["message"]["content"] or ""
                 tokens = body.get("usage", {}).get("completion_tokens", count_tokens_approx(text))
                 return {"text": text, "tokens": tokens, "latency_ms": latency_ms, "error": None}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - any provider failure is surfaced via the "error" field
             latency_ms = int((time.monotonic() - start) * 1000)
             return {"text": "", "tokens": 0, "latency_ms": latency_ms, "error": str(e)}
 

@@ -16,9 +16,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adapters.splunk_hec import SplunkHECAdapter, resolve_secret  # noqa: E402
-from adapters.elastic_bulk import ElasticBulkAdapter  # noqa: E402
-from adapters import siem_dispatch  # noqa: E402
+from adapters import siem_dispatch
+from adapters.elastic_bulk import ElasticBulkAdapter
+from adapters.splunk_hec import SplunkHECAdapter, resolve_secret
 
 SAMPLE_FINDING = {
     "schema": "GSH-Alert-v1",

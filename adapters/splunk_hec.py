@@ -105,7 +105,7 @@ class SplunkHECAdapter:
                 self.hec_url, json=payload, headers=headers,
                 verify=self.verify_ssl, timeout=self.timeout_seconds,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - adapter must degrade, never crash the caller
             logger.warning(f"Splunk HEC send failed ({type(e).__name__}): {e}")
             return False
 

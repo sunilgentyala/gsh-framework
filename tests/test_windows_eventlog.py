@@ -18,9 +18,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import adapters.windows_eventlog as weventlog  # noqa: E402
-from adapters.windows_eventlog import (  # noqa: E402
-    WindowsEventLogAdapter, SEVERITY_TO_EVENT_TYPE, _format_message,
+import adapters.windows_eventlog as weventlog
+from adapters.windows_eventlog import (
+    SEVERITY_TO_EVENT_TYPE,
+    WindowsEventLogAdapter,
+    _format_message,
 )
 
 SAMPLE_FINDING = {

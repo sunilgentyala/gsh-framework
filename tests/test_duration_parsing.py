@@ -41,11 +41,6 @@ class TestParseDuration:
             ("24H", 86400),
             ("30M", 1800),
             ("60S", 60),
-            # Mixed case
-            ("7d", 604800),
-            ("24h", 86400),
-            ("30m", 1800),
-            ("60s", 60),
             # Whitespace handling
             ("  7d  ", 604800),
             ("\t24h\n", 86400),

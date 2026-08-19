@@ -768,7 +768,7 @@ def connect_and_snapshot(server_cmd: list, server_id: str,
         try:
             proc.terminate()
             proc.wait(timeout=5)
-        except Exception:
+        except Exception:  # noqa: BLE001 - any failure to terminate cleanly falls through to kill()
             proc.kill()
 
 

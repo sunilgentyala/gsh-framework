@@ -73,14 +73,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from adapters.mcp_proxy import inspect_parameters  # noqa: E402
+from adapters.mcp_proxy import inspect_parameters
 
 try:
     from langchain_core.callbacks.base import BaseCallbackHandler
     _LANGCHAIN_AVAILABLE = True
 except ImportError:
     try:
-        from langchain.callbacks.base import BaseCallbackHandler  # type: ignore[no-redef]  # legacy package layout
+        from langchain.callbacks.base import (  # type: ignore[no-redef]  # legacy package layout
+            BaseCallbackHandler,
+        )
         _LANGCHAIN_AVAILABLE = True
     except ImportError:
         BaseCallbackHandler = object  # type: ignore[misc, assignment]
@@ -115,8 +117,8 @@ def _extract_llm_text_and_tokens(response) -> tuple:
                 text = getattr(gen, "text", "") or ""
                 if text:
                     texts.append(text)
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001 - best-effort across provider result shapes
+        logger.debug(f"Could not extract LLM text ({type(e).__name__}): {e}")
     combined = " ".join(texts)
 
     tokens = 0
@@ -124,8 +126,8 @@ def _extract_llm_text_and_tokens(response) -> tuple:
         llm_output = response.llm_output or {}
         usage = llm_output.get("token_usage") or llm_output.get("usage") or {}
         tokens = usage.get("total_tokens", 0) or 0
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001 - best-effort across provider result shapes
+        logger.debug(f"Could not extract token usage ({type(e).__name__}): {e}")
     if not tokens and combined:
         tokens = max(1, len(combined.split()))  # rough fallback, same heuristic as gsh-probe-eval.py
     return combined, tokens

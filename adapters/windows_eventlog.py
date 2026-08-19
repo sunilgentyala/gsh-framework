@@ -43,8 +43,8 @@ _IS_WINDOWS = platform.system() == "Windows"
 
 if _IS_WINDOWS:
     try:
-        import win32evtlogutil
         import win32evtlog
+        import win32evtlogutil
         _PYWIN32_AVAILABLE = True
     except ImportError:
         _PYWIN32_AVAILABLE = False
@@ -121,7 +121,7 @@ class WindowsEventLogAdapter:
             win32evtlogutil.AddSourceToRegistry(self.source, eventLogType=self.log_type)
             self._registered = True
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - registration must degrade, never crash the caller
             logger.warning(
                 f"Could not register Windows Event Log source '{self.source}' "
                 f"({type(e).__name__}: {e}). This one-time registration usually "
@@ -149,6 +149,6 @@ class WindowsEventLogAdapter:
                 self.source, DEFAULT_EVENT_ID, eventType=event_type, strings=[message],
             )
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - send() must never raise, per its docstring contract
             logger.warning(f"Windows Event Log write failed ({type(e).__name__}): {e}")
             return False

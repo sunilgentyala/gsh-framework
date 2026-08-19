@@ -21,14 +21,25 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adapters.mcp_proxy import (  # noqa: E402
-    MCPPolicyEngine, canonical_tool_hash, instruction_likelihood,
-    detect_invisible_content, inspect_parameters,
-    build_snapshot, save_snapshot, load_snapshot, approve_baseline,
-    is_baseline_approved, mark_unverified, verify_baseline, compute_source_hash,
+from adapters.mcp_proxy import (
+    MCPPolicyEngine,
+    approve_baseline,
+    build_snapshot,
+    canonical_tool_hash,
+    compute_source_hash,
+    detect_invisible_content,
+    inspect_parameters,
+    instruction_likelihood,
+    is_baseline_approved,
+    load_snapshot,
+    mark_unverified,
+    save_snapshot,
+    verify_baseline,
 )
-from tests.fixtures.mock_mcp_server import (  # noqa: E402
-    CLEAN_TOOLS, POISONED_TOOLS, RUG_PULL_TOOLS,
+from tests.fixtures.mock_mcp_server import (
+    CLEAN_TOOLS,
+    POISONED_TOOLS,
+    RUG_PULL_TOOLS,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -71,7 +82,7 @@ def test_instruction_likelihood_flags_imperative_language():
 
 
 def test_detect_invisible_content_finds_zero_width_space():
-    assert detect_invisible_content("hello​world") != []
+    assert detect_invisible_content("hello\u200bworld") != []
     assert detect_invisible_content("hello world") == []
 
 
@@ -240,7 +251,7 @@ def test_engine_blocks_unauthorized_tool_call(tmp_path):
     engine = MCPPolicyEngine("srv", "aggressive", TEST_POLICY, "SESSION-6",
                              str(tmp_path), siem_output="file")
     engine.evaluate_tool_definitions(CLEAN_TOOLS, str(baseline_path))
-    verdict, findings = engine.evaluate_tool_call("delete_everything", "agent-1", {})
+    verdict, _findings = engine.evaluate_tool_call("delete_everything", "agent-1", {})
     assert verdict == "BLOCK"
 
 
@@ -382,7 +393,7 @@ class _ProxySession:
         self.proc.terminate()
         try:
             self.proc.wait(timeout=5)
-        except Exception:
+        except Exception:  # noqa: BLE001 - any failure to terminate cleanly falls through to kill()
             self.proc.kill()
 
 
