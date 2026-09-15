@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
+[![Version](https://img.shields.io/badge/version-1.6.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
 [![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
 [![Website](https://img.shields.io/badge/website-live-blue)](https://sunilgentyala.github.io/gsh-framework/)
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
@@ -46,6 +46,7 @@ Full release notes (including known limitations at each release) are on the [Rel
 
 | Version | Highlights |
 |---|---|
+| [v1.6.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.6.0) | Security audit pass: newly-added MCP tools (added after an approved baseline) are no longer auto-authorized for invocation until reviewed; concurrent-write protection for MCP proxy stdout and LangChain adapter alert IDs; DNS-tunneling allowlist (Hunt-002) now raises its entropy/label-length bar for trusted apex domains instead of fully exempting them |
 | [v1.5.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.5.0) | Real Windows Application Event Log output adapter (`adapters/windows_eventlog.py`); optional and Windows-only, safe no-op elsewhere |
 | [v1.4.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.4.0) | Real LangChain callback adapter (`adapters/langchain_callback.py`) for Hunt-001/Hunt-004 telemetry - alert-only by design, since LangChain callbacks cannot block a tool call |
 | [v1.3.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.3.0) | Real Splunk HEC and Elastic bulk SIEM output adapters, wired into both the Sentinel and the MCP proxy via a shared dispatcher; a failed/unconfigured SIEM send now always falls back to local file output |

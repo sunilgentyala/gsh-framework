@@ -6,7 +6,7 @@ Sovereign Sentinel Deployment and Enforcement Engine
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.5.0
+Version: 1.6.0
 License: See LICENSE
 
 Description:
@@ -71,7 +71,7 @@ VALID_MODES = ("passive", "standard", "aggressive")
 
 DEFAULT_POLICY: dict[str, Any] = {
     "organization": "default-org",
-    "sentinel_version": "1.5.0",
+    "sentinel_version": "1.6.0",
     "enforcement_mode": "standard",
     "siem_output": "stdout",
     "egress_allowlist": [],
@@ -656,7 +656,7 @@ def main() -> int:
     output_dir = args.output
 
     logger.info("=" * 72)
-    logger.info("  Governed Security Hunting (GSH) Framework v1.5.0")
+    logger.info("  Governed Security Hunting (GSH) Framework v1.6.0")
     logger.info("  Sovereign Sentinel Deployment Engine")
     logger.info(f"  Session ID : {session_id}")
     logger.info(f"  Target     : {args.target}")

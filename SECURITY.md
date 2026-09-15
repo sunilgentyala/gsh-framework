@@ -8,8 +8,8 @@ Only the latest released version receives security fixes. Older tags are kept fo
 
 | Version | Supported |
 |---|---|
-| 1.5.x (latest) | :white_check_mark: |
-| < 1.5.0 | :x: |
+| 1.6.x (latest) | :white_check_mark: |
+| < 1.6.0 | :x: |
 
 ## Reporting a Vulnerability
 

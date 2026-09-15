@@ -5,7 +5,7 @@ LangChain Callback Adapter - Real Telemetry for Hunt-001 and Hunt-004
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.5.0
+Version: 1.6.0
 License: See LICENSE
 
 Description:
@@ -180,10 +180,19 @@ class GSHCallbackHandler(BaseCallbackHandler):
 
     def _build_finding(self, threat_class: str, severity: str, description: str,
                        evidence: dict, atlas_ids: list, nist_controls: list) -> dict:
-        self._alert_count += 1
+        # LangChain can invoke callback hooks from multiple threads for
+        # concurrent tool calls (parallel tool calling / async agents).
+        # self._alert_count += 1 is a read-modify-write on shared state, so
+        # it must be serialized the same way MCPPolicyEngine._build_finding()
+        # in adapters/mcp_proxy.py already is - otherwise concurrent findings
+        # can collide on the same counter value and produce duplicate
+        # alert_ids.
+        with self._lock:
+            self._alert_count += 1
+            alert_id = f"{self.session_id}-{self._alert_count:04d}"
         return {
             "schema": "GSH-Alert-v1",
-            "alert_id": f"{self.session_id}-{self._alert_count:04d}",
+            "alert_id": alert_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "target": self.target,
             "enforcement_mode": "alert_only",

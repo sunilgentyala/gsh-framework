@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gsh-framework"
-version = "1.5.0"
+version = "1.6.0"
 description = "Governed Security Hunting (GSH) Framework - autonomous agentic AI threat hunting: hunt playbooks, a real MCP proxy (Hunt-005), and SIEM/LangChain adapters."
 readme = "README.md"
 license = { file = "LICENSE" }

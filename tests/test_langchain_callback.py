@@ -13,6 +13,7 @@ minimum version this adapter targets).
 
 import json
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -175,3 +176,36 @@ def test_shannon_entropy_of_repeated_char_is_zero():
 
 def test_shannon_entropy_of_varied_text_is_positive():
     assert _shannon_entropy("the quick brown fox jumps over the lazy dog") > 0
+
+
+def test_alert_ids_unique_under_concurrent_findings():
+    """
+    Regression test: _build_finding()'s self._alert_count += 1 is a
+    read-modify-write on shared state. LangChain can invoke callback hooks
+    (on_tool_start) from multiple threads for concurrent/parallel tool
+    calls, so without a lock, concurrent findings could collide on the
+    same alert_count value and produce duplicate alert_ids - the same bug
+    class already fixed in adapters/mcp_proxy.py's MCPPolicyEngine.
+    """
+    handler = GSHCallbackHandler(target="test-agent", allowlist=["web_search"], window_seconds=9999)
+    all_alert_ids: list = []
+    ids_lock = threading.Lock()
+
+    def _capture(finding):
+        with ids_lock:
+            all_alert_ids.append(finding["alert_id"])
+
+    handler._emit = _capture
+
+    def _hammer():
+        for _ in range(200):
+            delete_everything.invoke({}, config={"callbacks": [handler]})
+
+    threads = [threading.Thread(target=_hammer) for _ in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(all_alert_ids) == 8 * 200
+    assert len(all_alert_ids) == len(set(all_alert_ids)), "duplicate alert_id under concurrency"

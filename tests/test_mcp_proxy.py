@@ -37,6 +37,7 @@ from adapters.mcp_proxy import (
     verify_baseline,
 )
 from tests.fixtures.mock_mcp_server import (
+    ADDED_TOOL_TOOLS,
     CLEAN_TOOLS,
     POISONED_TOOLS,
     RUG_PULL_TOOLS,
@@ -338,6 +339,44 @@ def test_engine_alert_ids_unique_under_concurrent_findings(tmp_path):
     assert len(all_alert_ids) == 8 * 200
 
 
+def test_engine_blocks_call_to_tool_added_after_baseline_approval(tmp_path):
+    """
+    Regression test: evaluate_tool_definitions() used to set approved_tools
+    to *every* currently listed tool once a tools/list response wasn't
+    itself blocking - including tools reported under diff["added"] that
+    are not part of the operator-approved baseline. That silently
+    authorized calls to a brand-new, never-reviewed tool the moment a
+    compromised or updated server exposed it, contradicting this method's
+    own docstring ("an added tool is unauthorized at call time until
+    reviewed"). A newly added tool must remain BLOCKed at call time even
+    though its mere presence is only a MEDIUM finding, not a quarantine.
+
+    Uses "standard" mode (not "aggressive") so the added-tool finding
+    itself is ALERTED rather than BLOCKED - isolating the call-time
+    authorization gap from aggressive mode's separate zero-tolerance
+    "block on any finding" behavior.
+    """
+    baseline_path = tmp_path / "baseline.json"
+    _approved_baseline(baseline_path, CLEAN_TOOLS)
+
+    engine = MCPPolicyEngine("srv", "standard", TEST_POLICY, "SESSION-ADDED-1",
+                             str(tmp_path), siem_output="file")
+    verdict, findings = engine.evaluate_tool_definitions(ADDED_TOOL_TOOLS, str(baseline_path))
+    assert verdict == "ALLOW"  # an added tool alone does not quarantine the server
+    assert any(f["threat_class"] == "MCP Supply Chain / New Tool Since Approval" for f in findings)
+    assert engine.approved_tools == {"echo", "add"}
+
+    call_verdict, call_findings = engine.evaluate_tool_call("delete_file", "agent-1", {"path": "/etc/passwd"})
+    assert call_verdict == "BLOCK"
+    assert any(f["threat_class"] == "Rogue Agent / Unauthorized MCP Tool Invocation"
+              for f in call_findings)
+
+    # Tools that were already in the approved baseline remain callable.
+    ok_verdict, ok_findings = engine.evaluate_tool_call("echo", "agent-1", {"text": "hi"})
+    assert ok_verdict == "ALLOW"
+    assert ok_findings == []
+
+
 def test_engine_blocks_calls_to_quarantined_server(tmp_path):
     baseline_path = tmp_path / "baseline.json"
     _approved_baseline(baseline_path, CLEAN_TOOLS)
@@ -401,7 +440,7 @@ class _ProxySession:
 def proxy_session(tmp_path):
     sessions = []
 
-    def _make(server_flag="", pre_approve=True):
+    def _make(server_flag="", pre_approve=True, mode="aggressive"):
         server_cmd = f'"{sys.executable}" "{MOCK_SERVER}"'
         if server_flag:
             server_cmd += f" {server_flag}"
@@ -413,7 +452,7 @@ def proxy_session(tmp_path):
         session = _ProxySession([
             "--server-cmd", server_cmd,
             "--server-id", "pytest-server",
-            "--mode", "aggressive",
+            "--mode", mode,
             "--output", str(tmp_path),
             "--baseline", str(baseline_path),
         ])
@@ -446,6 +485,35 @@ def test_cli_allows_clean_call_and_blocks_unauthorized_tool(proxy_session):
     blocked_resp = session.wait_for_id(4)
     assert "error" in blocked_resp
     assert blocked_resp["error"]["code"] == -32001
+
+
+def test_cli_blocks_call_to_tool_added_after_baseline_approval(proxy_session):
+    """
+    End-to-end version of test_engine_blocks_call_to_tool_added_after_baseline_approval:
+    the real CLI process must refuse a tools/call for a tool that only
+    appears after the approved baseline was captured, even though the
+    server's tools/list response itself isn't blocking.
+    """
+    session = proxy_session(server_flag="--added-tool", mode="standard")
+    session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                  "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                            "clientInfo": {"name": "pytest", "version": "1.0"}}})
+    session.wait_for_id(1)
+    session.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    session.send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+    list_resp = session.wait_for_id(2)
+    assert {t["name"] for t in list_resp["result"]["tools"]} == {"echo", "add", "delete_file"}
+
+    session.send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+                 "params": {"name": "delete_file", "arguments": {"path": "/etc/passwd"}}})
+    blocked_resp = session.wait_for_id(3)
+    assert "error" in blocked_resp
+    assert blocked_resp["error"]["code"] == -32001
+
+    session.send({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
+                 "params": {"name": "echo", "arguments": {"text": "hello"}}})
+    call_resp = session.wait_for_id(4)
+    assert call_resp["result"]["content"][0]["text"] == "hello"
 
 
 def test_cli_aggressive_mode_refuses_to_start_without_approved_baseline(proxy_session):

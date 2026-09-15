@@ -6,7 +6,7 @@ MCP Baseline Governance CLI - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.5.0
+Version: 1.6.0
 License: See LICENSE
 
 Description:

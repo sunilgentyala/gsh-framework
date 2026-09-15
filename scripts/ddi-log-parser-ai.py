@@ -6,7 +6,7 @@ DNS/DHCP/IPAM (DDI) Log Parser with AI Agent Anomaly Detection
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.5.0
+Version: 1.6.0
 License: See LICENSE
 
 Description:
@@ -93,6 +93,17 @@ ALLOWLISTED_DOMAINS = {
     "akamaitechnologies.com", "fastly.net", "cloudflare.com",
     "microsoft.com", "apple.com", "akamai.net",
 }
+
+# An allowlisted apex (amazonaws.com, cloudfront.net, ...) covers an entire
+# hyperscale cloud/CDN provider. Attacker-controlled infrastructure hosted
+# under one of these (a compromised or attacker-owned S3 bucket, CloudFront
+# distribution, etc.) is a real, documented DNS-tunneling evasion technique
+# ("domain fronting" / abuse of trusted third-party domains), so an
+# allowlisted apex must raise the bar for entropy/long-label detection
+# rather than exempt it entirely - a full bypass would let tunneling
+# traffic hide under any of these ~10 domains with zero scrutiny.
+ALLOWLIST_ENTROPY_BONUS = 1.0       # bits added to the entropy threshold
+ALLOWLIST_LABEL_LENGTH_BONUS = 15   # extra characters tolerated per label
 
 ATLAS_HUNT002 = ["AML.T0048", "AML.T0051"]
 ATTCK_HUNT002 = ["T1071.004", "T1048", "T1568"]
@@ -293,13 +304,13 @@ def is_allowlisted(query: str) -> bool:
 
 def check_high_entropy_subdomain(record: DnsRecord,
                                  threshold: float) -> dict | None:
-    if is_allowlisted(record.query):
-        return None
+    allowlisted = is_allowlisted(record.query)
+    effective_threshold = threshold + (ALLOWLIST_ENTROPY_BONUS if allowlisted else 0.0)
     subdomain = extract_subdomain(record.query)
     if not subdomain:
         return None
     entropy = shannon_entropy(subdomain.replace(".", ""))
-    if entropy < threshold:
+    if entropy < effective_threshold:
         return None
     return {
         "detection_type": "HIGH_ENTROPY_SUBDOMAIN",
@@ -308,10 +319,12 @@ def check_high_entropy_subdomain(record: DnsRecord,
         "query": record.query,
         "subdomain": subdomain,
         "entropy_bits": round(entropy, 4),
-        "threshold": threshold,
+        "threshold": effective_threshold,
         "description": (
             f"Subdomain '{subdomain}' has Shannon entropy {entropy:.2f} bits "
-            f"(threshold: {threshold}). Consistent with data encoding for DNS tunneling."
+            f"(threshold: {effective_threshold}"
+            + (f", raised from {threshold:.2f} - allowlisted apex domain" if allowlisted else "")
+            + "). Consistent with data encoding for DNS tunneling."
         ),
         "mitre_atlas": ATLAS_HUNT002,
         "mitre_attck": ATTCK_HUNT002,
@@ -322,10 +335,10 @@ def check_high_entropy_subdomain(record: DnsRecord,
 
 
 def check_long_label(record: DnsRecord) -> dict | None:
-    if is_allowlisted(record.query):
-        return None
+    allowlisted = is_allowlisted(record.query)
+    effective_length = SUSPICIOUS_LABEL_LENGTH + (ALLOWLIST_LABEL_LENGTH_BONUS if allowlisted else 0)
     labels = record.query.split(".")
-    long_labels = [label for label in labels if len(label) > SUSPICIOUS_LABEL_LENGTH]
+    long_labels = [label for label in labels if len(label) > effective_length]
     if not long_labels:
         return None
     return {
@@ -335,9 +348,9 @@ def check_long_label(record: DnsRecord) -> dict | None:
         "query": record.query,
         "long_labels": long_labels,
         "max_label_length": max(len(label) for label in long_labels),
-        "threshold": SUSPICIOUS_LABEL_LENGTH,
+        "threshold": effective_length,
         "description": (
-            f"DNS label(s) exceed {SUSPICIOUS_LABEL_LENGTH} characters: {long_labels}. "
+            f"DNS label(s) exceed {effective_length} characters: {long_labels}. "
             "Long labels are a known indicator of DNS tunneling or DGA."
         ),
         "mitre_atlas": ATLAS_HUNT002,
@@ -658,7 +671,7 @@ def main() -> int:
                     return 1
 
     logger.info("=" * 72)
-    logger.info("  GSH Framework v1.5.0 - DDI Log Parser")
+    logger.info("  GSH Framework v1.6.0 - DDI Log Parser")
     logger.info("  Hunt-002: DDI Covert Channel / C2 via DNS")
     logger.info(f"  Input   : {args.input}")
     logger.info(f"  Format  : {args.format}")

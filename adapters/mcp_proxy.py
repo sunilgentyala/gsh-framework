@@ -5,7 +5,7 @@ MCP Runtime Adapter - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.5.0
+Version: 1.6.0
 License: See LICENSE
 
 Description:
@@ -25,7 +25,7 @@ Description:
         - Basic parameter inspection (credential patterns, path
           traversal, suspicious encoding) reused from Hunt-004
 
-    Known limitations (v1.5.0):
+    Known limitations (v1.6.0):
         - Only the stdio transport is implemented (the most common local
           MCP transport). Streamable HTTP/SSE servers are not supported yet.
         - Canary comparison (playbook section 5.2, check 3) is not
@@ -627,7 +627,31 @@ class MCPPolicyEngine:
             if overall_block:
                 self.quarantined = True
                 self.approved_tools = set()
+            elif approved:
+                # A tool matching the approved baseline is authorized for
+                # invocation. A tool reported under diff["added"] above is
+                # NOT part of that baseline - per this method's docstring,
+                # "an added tool is unauthorized at call time until
+                # reviewed". Previously this branch set approved_tools to
+                # *every* currently listed tool (including newly added
+                # ones), which silently authorized calls to unreviewed
+                # tools the moment a server's tools/list response was
+                # merely non-blocking - contradicting the documented
+                # intent and the MEDIUM "New Tool Since Approval" finding
+                # emitted above. Intersecting with the baseline's own tool
+                # names closes that gap.
+                assert baseline is not None, "approved implies is_baseline_approved(baseline) was True"
+                self.approved_tools = (
+                    set(current["tool_hashes"].keys())
+                    & set(baseline.get("tool_hashes", {}).keys())
+                )
             else:
+                # No approved baseline exists yet (first contact, or a
+                # captured-but-not-yet-reviewed snapshot). Passive/standard
+                # modes proceed under alert in this state (aggressive mode
+                # never reaches here - see run()'s startup refusal above),
+                # so every currently listed tool is usable until an
+                # operator approves a baseline.
                 self.approved_tools = set(current["tool_hashes"].keys())
 
         return ("BLOCK" if overall_block else "ALLOW"), findings
@@ -744,7 +768,7 @@ def connect_and_snapshot(server_cmd: list, server_id: str,
             "params": {
                 "protocolVersion": "2025-06-18",
                 "capabilities": {},
-                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.5.0"},
+                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.6.0"},
             },
         })
         init_response = _read_with_timeout(proc.stdout, timeout)
@@ -825,6 +849,13 @@ class MCPStdioProxy:
                                       output_dir, resolved_siem_output)
         self.proc: subprocess.Popen[str] | None = None
         self._stop = threading.Event()
+        # _host_to_server (via _reply_error, on a BLOCK verdict) and
+        # _server_to_host (relaying every line from the wrapped server)
+        # both write to this process's own sys.stdout from separate
+        # threads. Without serializing those writes, two concurrent
+        # .write() calls could interleave mid-message on the host's
+        # stdin pipe, corrupting the JSON-RPC stream the host is parsing.
+        self._stdout_lock = threading.Lock()
 
     def run(self) -> int:
         if self.mode == "aggressive":
@@ -867,8 +898,9 @@ class MCPStdioProxy:
     def _reply_error(self, request_id, code: int, message: str) -> None:
         response = {"jsonrpc": "2.0", "id": request_id,
                    "error": {"code": code, "message": message}}
-        sys.stdout.write(json.dumps(response) + "\n")
-        sys.stdout.flush()
+        with self._stdout_lock:
+            sys.stdout.write(json.dumps(response) + "\n")
+            sys.stdout.flush()
 
     def _host_to_server(self) -> None:
         assert self.proc is not None, "proc must be started before _host_to_server runs"
@@ -914,8 +946,9 @@ class MCPStdioProxy:
             try:
                 msg = json.loads(line)
             except json.JSONDecodeError:
-                sys.stdout.write(line)
-                sys.stdout.flush()
+                with self._stdout_lock:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
                 continue
 
             result = msg.get("result")
@@ -931,6 +964,7 @@ class MCPStdioProxy:
                     msg["result"]["tools"] = []
                     line = json.dumps(msg) + "\n"
 
-            sys.stdout.write(line if line.endswith("\n") else line + "\n")
-            sys.stdout.flush()
+            with self._stdout_lock:
+                sys.stdout.write(line if line.endswith("\n") else line + "\n")
+                sys.stdout.flush()
         self._stop.set()

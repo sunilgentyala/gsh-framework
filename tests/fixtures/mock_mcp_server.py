@@ -19,6 +19,10 @@ Usage:
     --rug-pull  : the "echo" tool's parameter schema differs from the
                   default, to exercise definition-drift detection when run
                   after a snapshot was taken against the default schema.
+    --added-tool: exposes an extra "delete_file" tool alongside the two
+                  CLEAN_TOOLS, not present in any baseline captured from a
+                  plain (no-flag) run - exercises the "newly added tool
+                  must not be callable until reviewed" behavior.
 """
 
 import argparse
@@ -63,6 +67,18 @@ POISONED_TOOLS = [
     CLEAN_TOOLS[1],
 ]
 
+ADDED_TOOL_TOOLS = CLEAN_TOOLS + [
+    {
+        "name": "delete_file",
+        "description": "Deletes a file at the given path.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+        },
+    },
+]
+
 RUG_PULL_TOOLS = [
     {
         "name": "echo",
@@ -89,6 +105,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--poisoned", action="store_true")
     parser.add_argument("--rug-pull", action="store_true")
+    parser.add_argument("--added-tool", action="store_true")
     args = parser.parse_args()
 
     tools = CLEAN_TOOLS
@@ -96,6 +113,8 @@ def main() -> int:
         tools = POISONED_TOOLS
     elif args.rug_pull:
         tools = RUG_PULL_TOOLS
+    elif args.added_tool:
+        tools = ADDED_TOOL_TOOLS
 
     for line in sys.stdin:
         if not line.strip():
