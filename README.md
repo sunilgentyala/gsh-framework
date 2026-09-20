@@ -8,6 +8,7 @@
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
 [![NIST CSF](https://img.shields.io/badge/NIST-CSF%202.0-blue)](https://www.nist.gov/cyberframework)
 [![Stars](https://img.shields.io/github/stars/sunilgentyala/gsh-framework?style=social)](https://github.com/sunilgentyala/gsh-framework/stargazers)
+[![Forks](https://img.shields.io/github/forks/sunilgentyala/gsh-framework?style=social)](https://github.com/sunilgentyala/gsh-framework/network/members)
 
 **Author:** Sunil Gentyala, IEEE Senior Member | Lead Cybersecurity and AI Security Consultant, HCLTech
 **Contact:** [sunil.gentyala@ieee.org](mailto:sunil.gentyala@ieee.org)
