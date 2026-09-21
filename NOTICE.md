@@ -1,6 +1,6 @@
 # Notice
 
-The software is licensed under Apache-2.0 (see LICENSE). The following additional statements apply.
+The software is licensed under Apache-2.0 (see LICENSE). Copyright 2026 Sunil Gentyala. The following additional statements apply.
 
 ADDITIONAL NOTICE - Research Artifact Usage
 
