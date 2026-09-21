@@ -40,6 +40,7 @@ import hashlib
 import json
 import logging
 import sys
+import tempfile
 import time
 import uuid
 from datetime import datetime, timezone
@@ -139,8 +140,12 @@ def load_policy(policy_path: str) -> dict:
         logger.warning("PyYAML not installed. Using built-in defaults. Run: pip install pyyaml")
         return DEFAULT_POLICY.copy()
 
-    with open(path, "r") as f:
-        loaded = yaml.safe_load(f)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            loaded = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        problem = getattr(exc, "problem", None) or str(exc).splitlines()[0]
+        raise ValueError(f"Invalid YAML in policy '{policy_path}': {problem}") from exc
 
     # Merge loaded values over defaults
     policy = DEFAULT_POLICY.copy()
@@ -151,6 +156,17 @@ def load_policy(policy_path: str) -> dict:
 
     logger.info(f"Policy loaded from: {policy_path}")
     return policy
+
+
+def validate_output_dir(output_dir: str) -> None:
+    """Create *output_dir* and verify it is writable before a run starts."""
+    path = Path(output_dir)
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(prefix=".gsh-write-test-", dir=path):
+            pass
+    except (PermissionError, FileNotFoundError, NotADirectoryError, OSError) as exc:
+        raise PermissionError(f"Output directory '{output_dir}' is not writable") from exc
 
 
 def generate_session_id() -> str:
@@ -651,27 +667,29 @@ def main() -> int:
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
 
-    session_id = generate_session_id()
-    policy = load_policy(args.policy)
     output_dir = args.output
 
-    logger.info("=" * 72)
-    logger.info("  Governed Security Hunting (GSH) Framework v1.6.0")
-    logger.info("  Sovereign Sentinel Deployment Engine")
-    logger.info(f"  Session ID : {session_id}")
-    logger.info(f"  Target     : {args.target}")
-    logger.info(f"  Mode       : {args.mode.upper()}")
-    logger.info(f"  Org        : {policy.get('organization', 'default-org')}")
-    logger.info("=" * 72)
-
     try:
+        validate_output_dir(output_dir)
+        policy = load_policy(args.policy)
+        session_id = generate_session_id()
+
+        logger.info("=" * 72)
+        logger.info("  Governed Security Hunting (GSH) Framework v1.6.0")
+        logger.info("  Sovereign Sentinel Deployment Engine")
+        logger.info(f"  Session ID : {session_id}")
+        logger.info(f"  Target     : {args.target}")
+        logger.info(f"  Mode       : {args.mode.upper()}")
+        logger.info(f"  Org        : {policy.get('organization', 'default-org')}")
+        logger.info("=" * 72)
+
         if args.mode == "passive":
             window_seconds = parse_duration(args.baseline_window)
             logger.info(f"Baseline window: {args.baseline_window} ({window_seconds}s)")
             run_passive_mode(args.target, policy, window_seconds, session_id, output_dir)
         else:
             run_enforcement_mode(args.target, args.mode, policy, session_id, output_dir)
-    except ValueError as e:
+    except (ValueError, PermissionError, FileNotFoundError) as e:
         logger.error(str(e))
         return 1
     except Exception:
