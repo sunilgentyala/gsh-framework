@@ -5,7 +5,7 @@ Shared SIEM Output Dispatch
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.7.0
+Version: 1.8.0
 License: See LICENSE
 
 Description:

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.7.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
+[![Version](https://img.shields.io/badge/version-1.8.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
 [![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
 [![Website](https://img.shields.io/badge/website-live-blue)](https://sunilgentyala.github.io/gsh-framework/)
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
@@ -75,6 +75,7 @@ Full release notes (including known limitations at each release) are on the [Rel
 
 | Version | Highlights |
 |---|---|
+| [v1.8.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.8.0) | One-command Docker demo for Hunt-005 (`demo/`): drives the real baseline and proxy CLIs through a rug pull, a poisoned tool description and an implementation swap that keeps the schema identical, with a CI smoke test. Contribution path relaxed (small fixes go straight to a PR), Contributors Wanted block, scoped good-first-issue guides. No framework code changes |
 | [v1.7.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.7.0) | Implementation Identity Gate for Hunt-005 (`adapters/mcp_proxy.py`): an approved baseline is now bound to the resolved executable/script hashes and adjacent dependency-lock file behind the launch command, not just the tool schema - a server that keeps an identical schema while its implementation is swapped out under the same command reference is blocked before it is ever launched, not just quarantined after the fact. Closes a gap identified in independent third-party review (schema-only trust). Breaking: pre-1.7.0 approved baselines have no identity data and must be re-captured and re-approved |
 | [v1.6.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.6.0) | Security audit pass: newly-added MCP tools (added after an approved baseline) are no longer auto-authorized for invocation until reviewed; concurrent-write protection for MCP proxy stdout and LangChain adapter alert IDs; DNS-tunneling allowlist (Hunt-002) now raises its entropy/label-length bar for trusted apex domains instead of fully exempting them |
 | [v1.5.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.5.0) | Real Windows Application Event Log output adapter (`adapters/windows_eventlog.py`); optional and Windows-only, safe no-op elsewhere |

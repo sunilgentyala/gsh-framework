@@ -9,8 +9,8 @@ authors:
     email: sunil.gentyala@ieee.org
 title: "The Governed Security Hunting (GSH) Framework: Autonomous
   Agentic AI Threat Hunting for the Cognitive Cyber Domain"
-version: 1.7.0
-date-released: "2026-09-20"
+version: 1.8.0
+date-released: "2026-09-21"
 license: Apache-2.0
 url: "https://github.com/sunilgentyala/gsh-framework"
 keywords:
