@@ -87,3 +87,24 @@ def test_verify_reports_missing_baseline(tmp_path):
 def test_approve_requires_prior_capture(tmp_path):
     rc, _out, _err = _run("approve", "--baseline", str(tmp_path / "nope.json"), "--reviewer", "x")
     assert rc == 1
+
+
+def test_capture_records_implementation_identity(tmp_path):
+    """
+    capture must record an Implementation Identity (resolved executable
+    hashes) alongside the tool schema, not just the schema - otherwise the
+    Implementation Identity Gate in adapters/mcp_proxy.py has nothing to
+    check against for any baseline captured through this CLI.
+    """
+    baseline_path = tmp_path / "baseline.json"
+    rc, _, err = _run("capture", "--server-id", "srv", "--server-cmd",
+                      _mock_server_cmd(), "--baseline", str(baseline_path))
+    assert rc == 0, err
+    doc = json.loads(baseline_path.read_text())
+    assert "identity" in doc
+    assert str(MOCK_SERVER.resolve()) in doc["identity"]["file_hashes"]
+
+    rc, out, err = _run("review", "--baseline", str(baseline_path))
+    assert rc == 0, err
+    assert "Implementation Identity" in out
+    assert str(MOCK_SERVER.resolve()) in out

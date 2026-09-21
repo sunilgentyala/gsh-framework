@@ -5,7 +5,7 @@ MCP Runtime Adapter - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.6.0
+Version: 1.7.0
 License: See LICENSE
 
 Description:
@@ -18,6 +18,12 @@ Description:
     It implements the detection logic documented in
     playbooks/hunt-005-mcp-tool-poisoning.md section 5:
         - Approval-time schema hashing and drift detection
+        - Implementation Identity Gate: binds an approved baseline to what
+          actually executes (resolved executable/script hashes + adjacent
+          dependency lock), not just the interface it advertises - an
+          approved tool schema no longer authorizes a swapped-out
+          implementation behind the same command reference (see
+          compute_implementation_identity() below)
         - Semantic scanning of tool descriptions/schemas for
           instruction-bearing language, invisible Unicode content, and
           cross-tool references
@@ -25,9 +31,14 @@ Description:
         - Basic parameter inspection (credential patterns, path
           traversal, suspicious encoding) reused from Hunt-004
 
-    Known limitations (v1.6.0):
+    Known limitations (v1.7.0):
         - Only the stdio transport is implemented (the most common local
           MCP transport). Streamable HTTP/SSE servers are not supported yet.
+        - The Implementation Identity Gate hashes local files referenced by
+          the launch command and one dependency-lock file found alongside
+          them. It does not cover container/image digests, remote
+          endpoint/TLS identity, or a full provenance/signature chain -
+          those only apply to transports this proxy doesn't wrap yet.
         - Canary comparison (playbook section 5.2, check 3) is not
           implemented - this proxy only sees one identity's view of a
           server, so response-asymmetry detection is out of scope here.
@@ -48,6 +59,7 @@ import json
 import logging
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -138,6 +150,108 @@ def split_command(command: str) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Implementation Identity Gate
+#
+# canonical_tool_hash() below only ever covers name/description/schema - the
+# *interface* a server advertises. A server can keep that exact interface
+# while its executable, script, or dependency lock changes underneath the
+# same command reference (same command != same real configuration). This
+# closes that gap for the stdio transport by hashing every filesystem path
+# the launch command actually resolves to (interpreter + entrypoint script)
+# plus one dependency-lock file found alongside them, and binding an
+# approved baseline to that combination as well as to the tool schema. See
+# the module docstring's "Known limitations" for what this does not cover
+# (container/image digests, remote endpoint/TLS identity).
+# ---------------------------------------------------------------------------
+
+DEPENDENCY_LOCK_FILENAMES = [
+    "requirements.txt", "poetry.lock", "Pipfile.lock", "uv.lock",
+    "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
+]
+
+
+def resolve_identity_paths(server_cmd: list) -> list:
+    """
+    Returns every existing local file that server_cmd actually resolves to:
+    the first token resolved against PATH if it isn't already a path (the
+    interpreter/binary), and any other token that names an existing file
+    (the entrypoint script, config files, etc). Tokens that are neither
+    (flags, arguments, URLs) are skipped.
+    """
+    paths = []
+    for i, token in enumerate(server_cmd):
+        candidate = Path(token)
+        if not candidate.is_file() and i == 0:
+            which_result = shutil.which(token)
+            if which_result:
+                candidate = Path(which_result)
+        if candidate.is_file():
+            paths.append(candidate.resolve())
+    return paths
+
+
+def find_dependency_lock(paths: list):
+    """
+    Best-effort: the first known lock-file name found in a directory
+    containing one of the resolved identity paths. Returns None if none of
+    the well-known lock-file names are present - a missing lock file is not
+    itself a finding, it just means dependency_lock_hash stays None.
+    """
+    seen_dirs = []
+    for p in paths:
+        if p.parent not in seen_dirs:
+            seen_dirs.append(p.parent)
+    for directory in seen_dirs:
+        for name in DEPENDENCY_LOCK_FILENAMES:
+            candidate = directory / name
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def hash_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def compute_implementation_identity(server_cmd: list) -> dict:
+    """
+    A stdio-transport analogue of a package/image digest: the launch
+    command plus a content hash of every local file it resolves to (so
+    replacing the script or interpreter behind an unchanged command string
+    is detectable) and one adjacent dependency-lock file (so a swapped
+    dependency tree is detectable too, best-effort - this does not resolve
+    or hash the dependencies themselves, only the lock file's content).
+    """
+    paths = resolve_identity_paths(server_cmd)
+    file_hashes = {str(p): hash_file(p) for p in paths}
+    lock_file = find_dependency_lock(paths)
+    return {
+        "command": list(server_cmd),
+        "file_hashes": file_hashes,
+        "dependency_lock_path": str(lock_file) if lock_file else None,
+        "dependency_lock_hash": hash_file(lock_file) if lock_file else None,
+    }
+
+
+def identity_matches(current: dict | None, baseline: dict | None) -> bool:
+    """
+    True only if the command, every hashed file, and the dependency lock
+    hash match exactly. Missing identity data on either side (e.g. a
+    pre-Implementation-Identity-Gate baseline) fails closed rather than
+    being treated as an automatic match - see
+    MCPPolicyEngine.evaluate_implementation_identity() for how that
+    "no identity data yet" case is reported (MEDIUM, not a silent skip).
+    """
+    if not current or not baseline:
+        return False
+    return (
+        current.get("command") == baseline.get("command")
+        and current.get("file_hashes") == baseline.get("file_hashes")
+        and current.get("dependency_lock_hash") == baseline.get("dependency_lock_hash")
+    )
+
+
+# ---------------------------------------------------------------------------
 # Schema hashing / drift detection (playbook 5.1)
 # ---------------------------------------------------------------------------
 
@@ -160,14 +274,20 @@ def hash_tool_set(tools: list) -> dict:
             for i, tool in enumerate(tools)}
 
 
-def build_snapshot(server_id: str, tools: list) -> dict:
+def build_snapshot(server_id: str, tools: list, identity: dict | None = None) -> dict:
     """
     tool_hashes drives drift detection (diff_snapshot compares hashes
     only). The raw "tools" list is stored alongside it purely so a human
     running `gsh baseline review` has actual descriptions/schemas to read
     - reviewing a bare hash is not a meaningful approval step.
+
+    identity, when given, is the compute_implementation_identity() result
+    for the command this snapshot's tools were captured from. It is
+    optional here (callers that only have a schema, not a launch command,
+    still get a usable snapshot) but any snapshot without it cannot pass
+    the Implementation Identity Gate - see evaluate_implementation_identity().
     """
-    return {
+    snapshot = {
         "schema": SCHEMA_VERSION,
         "server_id": server_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -175,6 +295,9 @@ def build_snapshot(server_id: str, tools: list) -> dict:
         "tool_hashes": hash_tool_set(tools),
         "tools": tools,
     }
+    if identity is not None:
+        snapshot["identity"] = identity
+    return snapshot
 
 
 def load_snapshot(path: str) -> dict | None:
@@ -221,14 +344,16 @@ BASELINE_STATUS_UNVERIFIED = "unverified"
 BASELINE_STATUS_APPROVED = "approved"
 
 
-def compute_source_hash(tool_hashes: dict) -> str:
+def compute_source_hash(tool_hashes: dict, identity: dict | None = None) -> str:
     """
-    SHA-256 over the canonicalized tool_hashes mapping. Stored at approval
-    time and re-checked on every use so that hand-editing or re-capturing a
-    baseline file after it was approved invalidates the approval rather
-    than silently keeping it trusted.
+    SHA-256 over the canonicalized tool_hashes mapping (and, when present,
+    the implementation identity). Stored at approval time and re-checked on
+    every use so that hand-editing or re-capturing a baseline file after it
+    was approved invalidates the approval rather than silently keeping it
+    trusted - now covering *what runs*, not just the schema it exposes.
     """
-    canonical = json.dumps(tool_hashes, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps({"tool_hashes": tool_hashes, "identity": identity},
+                          sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -256,7 +381,7 @@ def is_baseline_approved(baseline: dict | None) -> bool:
     approval = baseline.get("approval")
     if not approval or approval.get("status") != BASELINE_STATUS_APPROVED:
         return False
-    expected_hash = compute_source_hash(baseline.get("tool_hashes", {}))
+    expected_hash = compute_source_hash(baseline.get("tool_hashes", {}), baseline.get("identity"))
     return approval.get("source_hash") == expected_hash
 
 
@@ -276,7 +401,7 @@ def approve_baseline(path: str, reviewer: str, signature: str | None = None) -> 
         "status": BASELINE_STATUS_APPROVED,
         "reviewer": reviewer,
         "approved_at": datetime.now(timezone.utc).isoformat(),
-        "source_hash": compute_source_hash(baseline.get("tool_hashes", {})),
+        "source_hash": compute_source_hash(baseline.get("tool_hashes", {}), baseline.get("identity")),
         "signature": signature,
     }
     save_snapshot(baseline, path)
@@ -295,7 +420,7 @@ def verify_baseline(path: str) -> tuple[bool, str]:
             f"Baseline at '{path}' exists but is not approved "
             f"(status: {approval.get('status', 'unknown')})."
         )
-    expected_hash = compute_source_hash(baseline.get("tool_hashes", {}))
+    expected_hash = compute_source_hash(baseline.get("tool_hashes", {}), baseline.get("identity"))
     if approval.get("source_hash") != expected_hash:
         return False, (
             f"Baseline at '{path}' has been modified since approval "
@@ -497,6 +622,65 @@ class MCPPolicyEngine:
 
     def _emit(self, finding: dict) -> None:
         emit_event(finding, self.siem_output, self.output_dir, self.policy)
+
+    def evaluate_implementation_identity(self, current_identity: dict,
+                                         baseline: dict | None,
+                                         baseline_path: str) -> tuple:
+        """
+        Implementation Identity Gate (see module docstring and the
+        identity_matches()/compute_implementation_identity() functions
+        above): an approved tool-schema baseline only means the *interface*
+        was reviewed. This checks whether what is actually about to be
+        launched (resolved executable/script hashes + dependency lock)
+        still matches what was approved, closing the gap where a server
+        keeps an identical schema while its implementation is swapped out
+        under the same command reference.
+
+        Called from MCPStdioProxy.run() before the wrapped server is
+        spawned, so a BLOCK verdict here prevents execution entirely rather
+        than quarantining an already-running process. Only called when a
+        baseline file exists at all - first contact with no baseline yet
+        has nothing to compare against, and is handled by
+        evaluate_tool_definitions()'s own unapproved-baseline finding once
+        the server is actually queried.
+        """
+        findings = []
+        baseline_identity = (baseline or {}).get("identity")
+        if baseline_identity is None:
+            findings.append(self._build_finding(
+                threat_class="MCP Supply Chain / No Implementation Identity Baseline",
+                severity="MEDIUM",
+                description=(
+                    f"Baseline for '{self.server_id}' at {baseline_path} was captured "
+                    "before Implementation Identity tracking existed (no executable/"
+                    "dependency-lock hashes recorded). Re-run 'gsh baseline capture' "
+                    "then 'review' and 'approve' to close this gap."
+                ),
+                evidence={"baseline_path": baseline_path},
+                action_taken=self._determine_action(force_block=(self.mode == "aggressive")),
+            ))
+        elif not identity_matches(current_identity, baseline_identity):
+            findings.append(self._build_finding(
+                threat_class="MCP Supply Chain / Implementation Identity Mismatch",
+                severity="CRITICAL",
+                description=(
+                    f"Server '{self.server_id}' is about to be launched with an "
+                    "executable, script, or dependency lock that does not match its "
+                    "approved baseline, even though the launch command is unchanged. "
+                    "An approved tool schema does not authorize a different "
+                    "implementation behind it (possible implant or supply-chain swap)."
+                ),
+                evidence={"current_identity": current_identity,
+                         "baseline_identity": baseline_identity,
+                         "baseline_path": baseline_path},
+                action_taken=self._determine_action(force_block=True),
+            ))
+
+        for f in findings:
+            self._emit(f)
+
+        overall_block = any(f["action_taken"] == "BLOCKED" for f in findings)
+        return ("BLOCK" if overall_block else "ALLOW"), findings
 
     def evaluate_tool_definitions(self, tools: list, baseline_path: str) -> tuple:
         """
@@ -768,7 +952,7 @@ def connect_and_snapshot(server_cmd: list, server_id: str,
             "params": {
                 "protocolVersion": "2025-06-18",
                 "capabilities": {},
-                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.6.0"},
+                "clientInfo": {"name": "gsh-mcp-snapshot", "version": "1.7.0"},
             },
         })
         init_response = _read_with_timeout(proc.stdout, timeout)
@@ -787,7 +971,7 @@ def connect_and_snapshot(server_cmd: list, server_id: str,
             )
 
         tools = list_response["result"].get("tools", [])
-        return build_snapshot(server_id, tools)
+        return build_snapshot(server_id, tools, identity=compute_implementation_identity(server_cmd))
     finally:
         try:
             proc.terminate()
@@ -858,15 +1042,36 @@ class MCPStdioProxy:
         self._stdout_lock = threading.Lock()
 
     def run(self) -> int:
-        if self.mode == "aggressive":
-            baseline = load_snapshot(self.baseline_path)
-            if not is_baseline_approved(baseline):
+        baseline = load_snapshot(self.baseline_path)
+
+        if self.mode == "aggressive" and not is_baseline_approved(baseline):
+            logger.error(
+                f"Refusing to start: aggressive mode requires an approved "
+                f"baseline for '{self.server_id}' at {self.baseline_path}. "
+                "Run 'gsh baseline capture' then 'gsh baseline review' and "
+                "'gsh baseline approve' before running this server in "
+                "aggressive mode. The MCP server was not launched."
+            )
+            return 1
+
+        # Implementation Identity Gate: only meaningful once a baseline
+        # exists to compare against - first contact has nothing to check
+        # yet (evaluate_tool_definitions() handles that case once the
+        # server actually responds). Runs for every mode, not just
+        # aggressive: a genuine implementation-identity mismatch is a
+        # forced CRITICAL block regardless of mode (see
+        # evaluate_implementation_identity()'s force_block=True), the same
+        # zero-tolerance treatment already given to definition drift.
+        if baseline is not None:
+            current_identity = compute_implementation_identity(self.server_cmd)
+            verdict, _ = self.engine.evaluate_implementation_identity(
+                current_identity, baseline, self.baseline_path
+            )
+            if verdict == "BLOCK":
                 logger.error(
-                    f"Refusing to start: aggressive mode requires an approved "
-                    f"baseline for '{self.server_id}' at {self.baseline_path}. "
-                    "Run 'gsh baseline capture' then 'gsh baseline review' and "
-                    "'gsh baseline approve' before running this server in "
-                    "aggressive mode. The MCP server was not launched."
+                    f"Refusing to start '{self.server_id}': Implementation Identity "
+                    f"check failed against {self.baseline_path} (see Hunt-005 "
+                    "findings for details). The MCP server was not launched."
                 )
                 return 1
 

@@ -26,14 +26,17 @@ from adapters.mcp_proxy import (
     approve_baseline,
     build_snapshot,
     canonical_tool_hash,
+    compute_implementation_identity,
     compute_source_hash,
     detect_invisible_content,
+    identity_matches,
     inspect_parameters,
     instruction_likelihood,
     is_baseline_approved,
     load_snapshot,
     mark_unverified,
     save_snapshot,
+    split_command,
     verify_baseline,
 )
 from tests.fixtures.mock_mcp_server import (
@@ -94,6 +97,43 @@ def test_inspect_parameters_flags_credential_pattern():
 
 def test_inspect_parameters_flags_path_traversal():
     assert inspect_parameters({"path": "../../etc/passwd"})
+
+
+# ---------------------------------------------------------------------------
+# Unit-level: Implementation Identity Gate
+# ---------------------------------------------------------------------------
+
+def test_identity_matches_true_for_identical_command_and_files(tmp_path):
+    script = tmp_path / "server.py"
+    script.write_text("print('v1')\n")
+    identity = compute_implementation_identity([sys.executable, str(script)])
+    assert identity_matches(identity, identity) is True
+
+
+def test_identity_mismatch_when_file_content_changes_under_same_path(tmp_path):
+    """
+    The falsification test from independent third-party review of this
+    proxy: approve a benign server, then replace the file at the exact
+    same path/command reference with different content (same tool schema,
+    different implementation - "same exposed description != same real
+    configuration"). The identity must no longer match even though the
+    command string itself is byte-for-byte unchanged.
+    """
+    script = tmp_path / "server.py"
+    script.write_text("print('v1')\n")
+    server_cmd = [sys.executable, str(script)]
+    baseline_identity = compute_implementation_identity(server_cmd)
+
+    script.write_text("print('v2 - unauthorized canary side effect')\n")
+    current_identity = compute_implementation_identity(server_cmd)
+
+    assert identity_matches(current_identity, baseline_identity) is False
+
+
+def test_identity_matches_false_when_either_side_missing():
+    current = compute_implementation_identity([sys.executable])
+    assert identity_matches(current, None) is False
+    assert identity_matches(None, {"command": []}) is False
 
 
 # ---------------------------------------------------------------------------
@@ -169,13 +209,19 @@ def test_verify_baseline_reports_missing_unapproved_and_approved(tmp_path):
 # Unit-level: MCPPolicyEngine scenarios
 # ---------------------------------------------------------------------------
 
-def _approved_baseline(path, tools, server_id="srv", reviewer="test-reviewer"):
+def _approved_baseline(path, tools, server_id="srv", reviewer="test-reviewer", server_cmd=None):
     """
     Simulates the real operator workflow (gsh-baseline.py capture -> review
     -> approve) for tests that need to start from an already-trusted
     baseline rather than exercising first-contact behavior itself.
+
+    server_cmd, when given, attaches an Implementation Identity computed
+    from that real command - tests exercising the identity gate need the
+    baseline to actually carry identity data, same as a real 'capture'
+    against a live server would produce.
     """
-    save_snapshot(build_snapshot(server_id, tools), str(path))
+    identity = compute_implementation_identity(server_cmd) if server_cmd else None
+    save_snapshot(build_snapshot(server_id, tools, identity=identity), str(path))
     return approve_baseline(str(path), reviewer=reviewer)
 
 
@@ -389,6 +435,66 @@ def test_engine_blocks_calls_to_quarantined_server(tmp_path):
     assert findings[0]["threat_class"] == "MCP Supply Chain / Call to Quarantined Server"
 
 
+def test_engine_identity_gate_blocks_on_implementation_swap(tmp_path):
+    baseline_path = tmp_path / "baseline.json"
+    script = tmp_path / "server.py"
+    script.write_text("print('v1')\n")
+    server_cmd = [sys.executable, str(script)]
+    _approved_baseline(baseline_path, CLEAN_TOOLS, server_cmd=server_cmd)
+    baseline = load_snapshot(str(baseline_path))
+
+    script.write_text("print('v2')\n")  # implementation swapped under the same path
+    current_identity = compute_implementation_identity(server_cmd)
+
+    engine = MCPPolicyEngine("srv", "standard", TEST_POLICY, "SESSION-IDENTITY-1",
+                             str(tmp_path), siem_output="file")
+    verdict, findings = engine.evaluate_implementation_identity(
+        current_identity, baseline, str(baseline_path)
+    )
+    assert verdict == "BLOCK"
+    assert any(f["threat_class"] == "MCP Supply Chain / Implementation Identity Mismatch"
+              for f in findings)
+
+
+def test_engine_identity_gate_allows_on_match(tmp_path):
+    baseline_path = tmp_path / "baseline.json"
+    script = tmp_path / "server.py"
+    script.write_text("print('v1')\n")
+    server_cmd = [sys.executable, str(script)]
+    _approved_baseline(baseline_path, CLEAN_TOOLS, server_cmd=server_cmd)
+    baseline = load_snapshot(str(baseline_path))
+    current_identity = compute_implementation_identity(server_cmd)
+
+    engine = MCPPolicyEngine("srv", "aggressive", TEST_POLICY, "SESSION-IDENTITY-2",
+                             str(tmp_path), siem_output="file")
+    verdict, findings = engine.evaluate_implementation_identity(
+        current_identity, baseline, str(baseline_path)
+    )
+    assert verdict == "ALLOW"
+    assert findings == []
+
+
+def test_engine_identity_gate_flags_missing_identity_not_silently(tmp_path):
+    """
+    A baseline captured before this gate existed carries no 'identity' key.
+    That must be surfaced (MEDIUM, alert-only in passive/standard), not
+    silently treated as a pass - and forced to BLOCK in aggressive mode,
+    the same fail-closed treatment already given to an unapproved baseline.
+    """
+    baseline_path = tmp_path / "baseline.json"
+    _approved_baseline(baseline_path, CLEAN_TOOLS)  # no server_cmd -> no identity
+    baseline = load_snapshot(str(baseline_path))
+    current_identity = compute_implementation_identity([sys.executable])
+
+    engine = MCPPolicyEngine("srv", "aggressive", TEST_POLICY, "SESSION-IDENTITY-3",
+                             str(tmp_path), siem_output="file")
+    verdict, findings = engine.evaluate_implementation_identity(
+        current_identity, baseline, str(baseline_path)
+    )
+    assert verdict == "BLOCK"
+    assert findings[0]["threat_class"] == "MCP Supply Chain / No Implementation Identity Baseline"
+
+
 # ---------------------------------------------------------------------------
 # Integration: drive the real CLI over stdio as a real MCP host would
 # ---------------------------------------------------------------------------
@@ -440,7 +546,7 @@ class _ProxySession:
 def proxy_session(tmp_path):
     sessions = []
 
-    def _make(server_flag="", pre_approve=True, mode="aggressive"):
+    def _make(server_flag="", pre_approve=True, mode="aggressive", identity_server_cmd=True):
         server_cmd = f'"{sys.executable}" "{MOCK_SERVER}"'
         if server_flag:
             server_cmd += f" {server_flag}"
@@ -448,7 +554,15 @@ def proxy_session(tmp_path):
         if pre_approve:
             # Simulates the real operator workflow: capture + approve a
             # baseline before ever switching a server to aggressive mode.
-            _approved_baseline(baseline_path, CLEAN_TOOLS, server_id="pytest-server")
+            # Attaching the real, matching server_cmd here mirrors what a
+            # genuine 'gsh-baseline.py capture' against this same command
+            # would record, so the Implementation Identity Gate sees a
+            # match rather than treating every pre-approved test baseline
+            # as pre-dating identity tracking.
+            _approved_baseline(
+                baseline_path, CLEAN_TOOLS, server_id="pytest-server",
+                server_cmd=split_command(server_cmd) if identity_server_cmd else None,
+            )
         session = _ProxySession([
             "--server-cmd", server_cmd,
             "--server-id", "pytest-server",
@@ -529,3 +643,40 @@ def test_cli_aggressive_mode_refuses_to_start_without_approved_baseline(proxy_se
     with pytest.raises(TimeoutError):
         session.wait_for_id(1, timeout=2.0)
     assert session.proc.wait(timeout=5) == 1
+
+
+def test_cli_refuses_to_start_when_implementation_identity_mismatches(tmp_path):
+    """
+    End-to-end reproduction of the independent third-party falsification
+    test: approve a baseline for a real script, then swap that script's
+    content under the exact same path/command reference (the tool schema
+    itself is untouched by this edit - the point is that schema approval
+    alone said nothing about the implementation behind it), and confirm
+    the real CLI process refuses to launch the swapped implementation at
+    all, rather than connecting to it and only quarantining it afterward.
+    """
+    script_copy = tmp_path / "mock_mcp_server_copy.py"
+    script_copy.write_text(MOCK_SERVER.read_text())
+    server_cmd_str = f'"{sys.executable}" "{script_copy}"'
+    baseline_path = tmp_path / "baseline.json"
+    _approved_baseline(baseline_path, CLEAN_TOOLS, server_id="pytest-server",
+                       server_cmd=split_command(server_cmd_str))
+
+    script_copy.write_text(script_copy.read_text() + "\n# implementation swapped\n")
+
+    session = _ProxySession([
+        "--server-cmd", server_cmd_str,
+        "--server-id", "pytest-server",
+        "--mode", "aggressive",
+        "--output", str(tmp_path),
+        "--baseline", str(baseline_path),
+    ])
+    try:
+        session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                     "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                               "clientInfo": {"name": "pytest", "version": "1.0"}}})
+        with pytest.raises(TimeoutError):
+            session.wait_for_id(1, timeout=2.0)
+        assert session.proc.wait(timeout=5) == 1
+    finally:
+        session.close()

@@ -6,7 +6,7 @@ MCP Baseline Governance CLI - Hunt-005: MCP Supply Chain & Tool Poisoning
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.6.0
+Version: 1.7.0
 License: See LICENSE
 
 Description:
@@ -15,7 +15,9 @@ Description:
     module). A freshly captured baseline is never automatically trusted:
 
         capture  Connect to a real MCP server, record its current tool
-                 definitions as an UNVERIFIED snapshot.
+                 definitions AND its Implementation Identity (resolved
+                 executable/script hashes + adjacent dependency lock, from
+                 --server-cmd) as an UNVERIFIED snapshot.
         review   Print a captured snapshot's tools (description, schema,
                  semantic-scan findings) for a human to read before
                  deciding whether to trust it.
@@ -106,6 +108,7 @@ def cmd_review(args) -> int:
 
     approval = baseline.get("approval") or {}
     tools = baseline.get("tools")
+    identity = baseline.get("identity")
 
     print("=" * 72)
     print(f"  Baseline review: {baseline.get('server_id')}")
@@ -117,6 +120,20 @@ def cmd_review(args) -> int:
         print(f"  Approved by   : {approval.get('reviewer')}")
         print(f"  Approved at   : {approval.get('approved_at')}")
     print("=" * 72)
+
+    print("\nImplementation Identity (executable/dependency-lock pinning):")
+    if identity is None:
+        print(
+            "  NONE - this baseline predates the Implementation Identity Gate. "
+            "Approving it will only pin the tool schema, not what actually "
+            "runs (see adapters/mcp_proxy.py known limitations)."
+        )
+    else:
+        print(f"  Command           : {' '.join(identity.get('command', []))}")
+        for path, file_hash in identity.get("file_hashes", {}).items():
+            print(f"  {file_hash[:16]}...  {path}")
+        lock_path = identity.get("dependency_lock_path")
+        print(f"  Dependency lock   : {lock_path or '(none found)'}")
 
     if tools is None:
         print(

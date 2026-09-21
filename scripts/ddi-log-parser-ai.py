@@ -6,7 +6,7 @@ DNS/DHCP/IPAM (DDI) Log Parser with AI Agent Anomaly Detection
 
 Author: Sunil Gentyala, Lead Cybersecurity and AI Security Consultant, HCLTech
 Contact: sunil.gentyala@ieee.org | sunil.gentyala@hcltech.com
-Version: 1.6.0
+Version: 1.7.0
 License: See LICENSE
 
 Description:
