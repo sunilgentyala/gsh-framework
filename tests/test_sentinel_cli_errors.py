@@ -45,7 +45,10 @@ def test_invalid_yaml_is_one_clean_error_without_traceback(tmp_path, monkeypatch
 
 
 def test_permission_error_is_one_clean_error_without_traceback(tmp_path, monkeypatch, caplog):
-    message = f"Output directory '{tmp_path / 'output'}' is not writable"
+    message = (
+        f"Output directory '{tmp_path / 'output'}' is not writable. "
+        "Check permissions or pass --output <path>."
+    )
     runner_calls = []
     monkeypatch.setattr(
         _MODULE.tempfile,
@@ -93,4 +96,27 @@ def test_unexpected_error_retains_traceback(tmp_path, monkeypatch, caplog):
     assert result == 1
     assert len(errors) == 1
     assert errors[0].getMessage() == "Fatal error"
+    assert errors[0].exc_info is not None
+
+
+def test_debug_log_level_keeps_traceback_for_expected_errors(tmp_path, monkeypatch, caplog):
+    policy = tmp_path / "invalid.yaml"
+    policy.write_text("thresholds: [unterminated", encoding="utf-8")
+    caplog.set_level(logging.ERROR, logger="gsh-sentinel")
+
+    result = _run_main(
+        monkeypatch,
+        "--mode",
+        "standard",
+        "--policy",
+        str(policy),
+        "--output",
+        str(tmp_path / "output"),
+        "--log-level",
+        "DEBUG",
+    )
+
+    errors = [record for record in caplog.records if record.levelno >= logging.ERROR]
+    assert result == 1
+    assert len(errors) == 1
     assert errors[0].exc_info is not None

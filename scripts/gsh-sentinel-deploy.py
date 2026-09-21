@@ -166,7 +166,10 @@ def validate_output_dir(output_dir: str) -> None:
         with tempfile.NamedTemporaryFile(prefix=".gsh-write-test-", dir=path):
             pass
     except (PermissionError, FileNotFoundError, NotADirectoryError, OSError) as exc:
-        raise PermissionError(f"Output directory '{output_dir}' is not writable") from exc
+        raise PermissionError(
+            f"Output directory '{output_dir}' is not writable. "
+            "Check permissions or pass --output <path>."
+        ) from exc
 
 
 def generate_session_id() -> str:
@@ -690,7 +693,7 @@ def main() -> int:
         else:
             run_enforcement_mode(args.target, args.mode, policy, session_id, output_dir)
     except (ValueError, PermissionError, FileNotFoundError) as e:
-        logger.error(str(e))
+        logger.error(str(e), exc_info=True if args.log_level == "DEBUG" else None)
         return 1
     except Exception:
         logger.exception("Fatal error")
