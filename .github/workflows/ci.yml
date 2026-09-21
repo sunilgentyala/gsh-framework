@@ -57,3 +57,12 @@ jobs:
 
       - name: Mypy check
         run: mypy adapters/ scripts/ --ignore-missing-imports
+
+  demo:
+    name: hunt-005 demo (docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Hunt-005 Docker demo smoke test
+        run: sh demo/smoke_test.sh

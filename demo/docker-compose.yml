@@ -1,0 +1,7 @@
+# One command: cd demo && docker compose up --build --abort-on-container-exit
+# The container exits 0 only if every Hunt-005 scenario behaved as expected.
+services:
+  hunt-005-demo:
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile

@@ -25,6 +25,34 @@ All detection signals are mapped to MITRE ATLAS and NIST CSF 2.0, giving practit
 
 ---
 
+## Try It in One Command
+
+```bash
+cd demo && docker compose up --build --abort-on-container-exit
+```
+
+Watch Hunt-005 catch an MCP rug pull, a poisoned tool description, and an implementation swap that keeps the tool schema identical. Details and limits: [demo/README.md](demo/README.md).
+
+---
+
+## Contributors Wanted
+
+GSH is actively looking for security engineers, Python developers, detection engineers and AI-security researchers.
+
+**Good first contributions** (each has a scoped issue with files, acceptance criteria and a difficulty estimate):
+
+- [Sample benign and rogue MCP telemetry](https://github.com/sunilgentyala/gsh-framework/issues/3)
+- [Sentinel policy JSON Schema validation](https://github.com/sunilgentyala/gsh-framework/issues/1)
+- [Architecture diagram](https://github.com/sunilgentyala/gsh-framework/issues/4)
+- [SARIF report output](https://github.com/sunilgentyala/gsh-framework/issues/10)
+- CrewAI / AutoGen integrations and additional MCP transports (open an issue first)
+
+Look for [`good first issue`](https://github.com/sunilgentyala/gsh-framework/labels/good%20first%20issue) and [`help wanted`](https://github.com/sunilgentyala/gsh-framework/labels/help%20wanted). First contribution? Documentation and tests are welcome too, and small fixes can go straight to a PR. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+**Especially wanted:** people who will try to break the Hunt-005 detection assumptions (false positives, false negatives, bypasses of the Implementation Identity Gate).
+
+---
+
 ## Current Status
 
 The hunt playbooks, detection logic, thresholds, and policy schema are complete and documented.
@@ -37,7 +65,7 @@ The hunt playbooks, detection logic, thresholds, and policy schema are complete 
 
 **LangChain telemetry** (`adapters/langchain_callback.py`) is a fourth real integration: `GSHCallbackHandler` attaches to any LangChain `Runnable`/agent via `config={"callbacks": [handler]}` and evaluates real tool-call rate, token velocity, unauthorized-tool invocations, and suspicious call parameters against Hunt-001/Hunt-004 thresholds - no synthetic data. **Important limitation:** LangChain callback handlers are notification hooks, not gates - by default LangChain swallows exceptions raised inside a callback rather than stopping the tool call, so this adapter can only alert, never block. Every finding it emits is explicitly marked `enforcement_mode: "alert_only"` and `action_taken: "ALERTED"`, regardless of policy mode. It also has no visibility into DNS queries (Hunt-002). See `tests/test_langchain_callback.py`, tested against `langchain-core` 1.4.x.
 
-See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for remaining work (SARIF reporting, the Hunt-006 playbook, and the Docker Compose demo).
+See [open issues](https://github.com/sunilgentyala/gsh-framework/issues) for remaining work (SARIF reporting and the Hunt-006 playbook). The Docker demo shipped as `demo/`.
 
 ---
 

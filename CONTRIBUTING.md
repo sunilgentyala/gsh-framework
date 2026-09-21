@@ -57,16 +57,23 @@ All contributors are expected to engage professionally and constructively. This 
 
 ## 4. How to Contribute
 
-### Step 1: Open an Issue First
+### Step 1: Pick Your Path
 
-Before writing code or a playbook, open a GitHub Issue to describe what you want to contribute and why. This prevents duplicate effort and allows the maintainers to provide early guidance on whether the contribution fits the project's direction.
+| Kind of change | What to do |
+|---|---|
+| Small fixes, tests, documentation, typos, examples | Open a PR directly. No issue needed. |
+| New features, architectural changes, new Hunt playbooks | Open an issue first so we can agree on the design before you invest time. |
 
-Use the appropriate issue template:
+Not sure which applies? Open an issue or a Discussion and ask; a quick answer is cheap.
+
+Issue templates for the second path:
 - **New Playbook Proposal** - for new hunt playbooks
 - **Threshold Refinement** - for changes to existing detection thresholds
 - **Integration Adapter** - for new platform integrations
 - **Bug Report** - for errors in existing detection logic or documentation
 - **General Enhancement** - for anything else
+
+Issues labeled `good first issue` and `help wanted` list the files involved, acceptance criteria, how to run the tests and an estimated difficulty. Comment on one to claim it.
 
 ### Step 2: Fork and Branch
 
@@ -103,7 +110,7 @@ For playbooks, have at least one colleague review the logic before submitting. D
 
 ### Step 5: Submit a Pull Request
 
-Submit a Pull Request from your branch to `main`. Reference the Issue number in the PR description. Complete all sections of the PR template.
+Submit a Pull Request from your branch to `main`. Reference the Issue number in the PR description if there is one. Complete all sections of the PR template.
 
 ---
 
@@ -188,7 +195,7 @@ def detect_threat_signal(
 
 1. Ensure your branch is up to date with `main` before submitting
 2. Complete all sections of the PR template; incomplete PRs will not be reviewed
-3. Link the Issue your PR addresses in the description
+3. Link the Issue your PR addresses in the description (if any)
 4. All PRs require at least one maintainer review and approval before merging
 5. PRs that change detection thresholds in existing playbooks must include a written justification with supporting data or references
 6. The project maintainer reserves the right to request threshold or logic changes before approval
