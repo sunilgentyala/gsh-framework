@@ -9,6 +9,14 @@ authors:
     email: sunil.gentyala@ieee.org
 title: "The Governed Security Hunting (GSH) Framework: Autonomous
   Agentic AI Threat Hunting for the Cognitive Cyber Domain"
+doi: 10.5281/zenodo.21384588
+identifiers:
+- type: doi
+  value: 10.5281/zenodo.21384588
+  description: Zenodo concept DOI (all versions; resolves to the latest archived release)
+- type: doi
+  value: 10.5281/zenodo.22867724
+  description: Zenodo DOI for the archived v1.6.0 release
 version: 1.8.0
 date-released: "2026-09-21"
 license: Apache-2.0

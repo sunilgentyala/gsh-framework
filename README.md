@@ -9,6 +9,7 @@
 [![NIST CSF](https://img.shields.io/badge/NIST-CSF%202.0-blue)](https://www.nist.gov/cyberframework)
 [![Stars](https://img.shields.io/github/stars/sunilgentyala/gsh-framework?style=social)](https://github.com/sunilgentyala/gsh-framework/stargazers)
 [![Forks](https://img.shields.io/github/forks/sunilgentyala/gsh-framework?style=social)](https://github.com/sunilgentyala/gsh-framework/network/members)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21384588.svg)](https://doi.org/10.5281/zenodo.21384588)
 
 **Author:** Sunil Gentyala, IEEE Senior Member | Lead Cybersecurity and AI Security Consultant, HCLTech
 **Contact:** [sunil.gentyala@ieee.org](mailto:sunil.gentyala@ieee.org)
@@ -309,9 +310,13 @@ If you use the GSH Framework in your research, please cite:
                   for Defending the Cognitive Cyber Domain},
   year         = {2026},
   howpublished = {Open Source Research Artifact, GitHub},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.21384588},
   url          = {https://github.com/sunilgentyala/gsh-framework}
 }
 ```
+
+The DOI above is the Zenodo concept DOI, which always resolves to the latest archived release. Machine-readable metadata is in [`CITATION.cff`](CITATION.cff).
 
 ---
 
