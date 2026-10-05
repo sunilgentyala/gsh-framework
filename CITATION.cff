@@ -17,8 +17,8 @@ identifiers:
 - type: doi
   value: 10.5281/zenodo.22867724
   description: Zenodo DOI for the archived v1.6.0 release
-version: 1.8.0
-date-released: "2026-09-21"
+version: 1.8.1
+date-released: "2026-10-05"
 license: Apache-2.0
 url: "https://github.com/sunilgentyala/gsh-framework"
 keywords:

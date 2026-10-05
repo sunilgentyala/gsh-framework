@@ -45,6 +45,6 @@
       <rect x="994" y="340" width="130" height="34" rx="17" fill="#162a4a" stroke="#fbbf24"/>
       <text x="1059" y="363" text-anchor="middle" fill="#e6f1ff">Apache 2.0</text>
     </g>
-    <text x="1240" y="60" text-anchor="end" font-size="20" font-weight="700" fill="#8aa0c2">v1.8.0</text>
+    <text x="1240" y="60" text-anchor="end" font-size="20" font-weight="700" fill="#8aa0c2">v1.8.1</text>
   </g>
 </svg>
