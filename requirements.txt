@@ -32,7 +32,7 @@ openai>=1.30.0
 
 # Richer statistical analysis for behavioral baselining
 # If not installed, the framework uses built-in pure-Python implementations.
-numpy>=1.26.0
+numpy>=2.2.6
 
 # HTTP request library, used by the Splunk HEC and Elastic bulk output
 # adapters (adapters/splunk_hec.py, adapters/elastic_bulk.py). If not
