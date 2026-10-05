@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://sunilgentyala.github.io/gsh-framework/"><img src="docs/banner.svg" alt="Governed Security Hunting (GSH) Framework: open-source threat hunting for agentic AI" width="100%"></a>
+  <a href="https://sunilgentyala.github.io/gsh-framework/"><img src="docs/banner-v1.9.0.svg" alt="Governed Security Hunting (GSH) Framework: open-source threat hunting for agentic AI" width="100%"></a>
 </p>
 
 # Governed Security Hunting (GSH) Framework
