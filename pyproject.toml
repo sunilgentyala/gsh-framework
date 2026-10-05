@@ -36,7 +36,7 @@ windows = ["pywin32>=306; sys_platform == 'win32'"]
 llm = ["openai>=1.30.0"]
 dev = [
     "pytest>=8.0.0",
-    "ruff==0.16.3",
+    "ruff==0.16.10",
     "mypy>=1.10.0",
     "black>=24.0.0",
 ]
