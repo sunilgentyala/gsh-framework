@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="t d">
+  <title id="t">Governed Security Hunting (GSH) Framework</title>
+  <desc id="d">Open-source threat hunting for agentic AI: playbooks, behavioral baselines, and the Sovereign Sentinel policy engine, mapped to MITRE ATLAS and NIST CSF 2.0.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#14233f"/>
+    </linearGradient>
+    <linearGradient id="ac" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#1e3354" stroke-width="1" opacity="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="400" fill="url(#bg)"/>
+  <rect width="1280" height="400" fill="url(#grid)"/>
+  <rect x="0" y="0" width="10" height="400" fill="url(#ac)"/>
+
+  <!-- shield + radar emblem -->
+  <g transform="translate(110 200)">
+    <circle r="130" fill="none" stroke="#22d3ee" stroke-opacity="0.25"/>
+    <circle r="95" fill="none" stroke="#22d3ee" stroke-opacity="0.35"/>
+    <circle r="60" fill="none" stroke="#22d3ee" stroke-opacity="0.5"/>
+    <path d="M0 -78 L62 -52 V8 C62 52 30 76 0 90 C-30 76 -62 52 -62 8 V-52 Z" fill="#0b1220" stroke="url(#ac)" stroke-width="5"/>
+    <path d="M-26 6 L-6 26 L30 -18" fill="none" stroke="#34d399" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="88" cy="-70" r="7" fill="#f87171"/>
+    <circle cx="-96" cy="60" r="6" fill="#fbbf24"/>
+  </g>
+
+  <g font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="290" y="130" font-size="22" font-weight="600" letter-spacing="4" fill="#22d3ee">OPEN-SOURCE AGENTIC AI THREAT HUNTING</text>
+    <text x="290" y="200" font-size="68" font-weight="800" fill="#ffffff">Governed Security</text>
+    <text x="290" y="270" font-size="68" font-weight="800" fill="url(#ac)">Hunting Framework</text>
+    <text x="290" y="316" font-size="24" fill="#c7d2e5">Detect rogue agents, poisoned MCP tools, and agentic loops.</text>
+
+    <g font-size="18" font-weight="600">
+      <rect x="290" y="340" width="150" height="34" rx="17" fill="#162a4a" stroke="#22d3ee"/>
+      <text x="365" y="363" text-anchor="middle" fill="#e6f1ff">5 Hunt Playbooks</text>
+      <rect x="456" y="340" width="190" height="34" rx="17" fill="#162a4a" stroke="#22d3ee"/>
+      <text x="551" y="363" text-anchor="middle" fill="#e6f1ff">Sovereign Sentinel</text>
+      <rect x="662" y="340" width="150" height="34" rx="17" fill="#162a4a" stroke="#34d399"/>
+      <text x="737" y="363" text-anchor="middle" fill="#e6f1ff">MITRE ATLAS</text>
+      <rect x="828" y="340" width="150" height="34" rx="17" fill="#162a4a" stroke="#34d399"/>
+      <text x="903" y="363" text-anchor="middle" fill="#e6f1ff">NIST CSF 2.0</text>
+      <rect x="994" y="340" width="130" height="34" rx="17" fill="#162a4a" stroke="#fbbf24"/>
+      <text x="1059" y="363" text-anchor="middle" fill="#e6f1ff">Apache 2.0</text>
+    </g>
+    <text x="1240" y="60" text-anchor="end" font-size="20" font-weight="700" fill="#8aa0c2">v1.8.0</text>
+  </g>
+</svg>

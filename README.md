@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="https://sunilgentyala.github.io/gsh-framework/"><img src="docs/banner.svg" alt="Governed Security Hunting (GSH) Framework: open-source threat hunting for agentic AI" width="100%"></a>
+</p>
+
 # Governed Security Hunting (GSH) Framework
 
 [![CI](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml)
