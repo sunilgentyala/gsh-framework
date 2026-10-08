@@ -36,7 +36,7 @@ All detection signals are mapped to MITRE ATLAS and NIST CSF 2.0, giving practit
 cd demo && docker compose up --build --abort-on-container-exit
 ```
 
-Watch Hunt-005 catch an MCP rug pull, a poisoned tool description, and an implementation swap that keeps the tool schema identical. Details and limits: [demo/README.md](demo/README.md).
+Watch Hunt-005 catch an MCP rug pull, a poisoned tool description, and an implementation swap that keeps the tool schema identical. Details and limits: [demo/README.md](demo/README.md).
 
 ![GSH Hunt-005 demo: rug pull, tool poisoning and implementation swap are all caught](docs/demo.gif)
 
