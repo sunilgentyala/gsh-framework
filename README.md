@@ -131,18 +131,18 @@ cd gsh-framework
 pip install -r requirements.txt
 ```
 
-**Alternative: install as a package.** The repo is also `pip`-installable from source (not yet published to PyPI, so install from the checkout, not `pip install gsh-framework`):
+**Alternative: install as a package.** It is published on PyPI as [`gsh-framework`](https://pypi.org/project/gsh-framework/) (from a checkout, use `pip install .` instead):
 
 ```bash
-pip install .              # adapters + all CLIs, PyYAML only (no SIEM/LangChain/Windows extras)
-pip install ".[splunk]"    # + Splunk/Elastic HTTP output (adapters/splunk_hec.py, elastic_bulk.py)
-pip install ".[langchain]" # + LangChain callback adapter
-pip install ".[windows]"   # + Windows Event Log adapter (Windows only)
-pip install ".[llm]"       # + OpenAI-compatible client for gsh-probe-eval.py
-pip install ".[dev]"       # + pytest, ruff, mypy, black
+pip install gsh-framework              # adapters + all CLIs, PyYAML only (no SIEM/LangChain/Windows extras)
+pip install "gsh-framework[splunk]"    # + Splunk/Elastic HTTP output (adapters/splunk_hec.py, elastic_bulk.py)
+pip install "gsh-framework[langchain]" # + LangChain callback adapter
+pip install "gsh-framework[windows]"   # + Windows Event Log adapter (Windows only)
+pip install "gsh-framework[llm]"       # + OpenAI-compatible client for gsh-probe-eval.py
+pip install "gsh-framework[dev]"       # + pytest, ruff, mypy, black
 ```
 
-This installs `gsh-sentinel-deploy`, `gsh-mcp-proxy`, `gsh-baseline`, `gsh-probe-eval`, and `gsh-ddi-log-parser` as commands (equivalent to `python scripts/<name>.py`), and makes `adapters` importable without manually adjusting `sys.path`. Extras can be combined, e.g. `pip install ".[splunk,langchain]"`.
+This installs `gsh-sentinel-deploy`, `gsh-mcp-proxy`, `gsh-baseline`, `gsh-probe-eval`, and `gsh-ddi-log-parser` as commands (equivalent to `python scripts/<name>.py`), and makes `adapters` importable without manually adjusting `sys.path`. Extras can be combined, e.g. `pip install "gsh-framework[splunk,langchain]"`.
 
 ### 2. Review the Sentinel Policy
 
