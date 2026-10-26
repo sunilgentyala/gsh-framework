@@ -1,8 +1,12 @@
+<p align="center">
+  <a href="https://sunilgentyala.github.io/gsh-framework/"><img src="docs/banner-v1.9.0.svg" alt="Governed Security Hunting (GSH) Framework: open-source threat hunting for agentic AI" width="100%"></a>
+</p>
+
 # Governed Security Hunting (GSH) Framework
 
 [![CI](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilgentyala/gsh-framework/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunilgentyala/gsh-framework)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.8.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
+[![Version](https://img.shields.io/badge/version-1.9.0-brightgreen)](https://github.com/sunilgentyala/gsh-framework)
 [![Paper](https://img.shields.io/badge/paper-in%20preparation-lightgrey)](https://github.com/sunilgentyala/gsh-framework#research)
 [![Website](https://img.shields.io/badge/website-live-blue)](https://sunilgentyala.github.io/gsh-framework/)
 [![MITRE ATLAS](https://img.shields.io/badge/MITRE-ATLAS-red)](https://atlas.mitre.org/)
@@ -33,6 +37,10 @@ cd demo && docker compose up --build --abort-on-container-exit
 ```
 
 Watch Hunt-005 catch an MCP rug pull, a poisoned tool description, and an implementation swap that keeps the tool schema identical. Details and limits: [demo/README.md](demo/README.md).
+
+![GSH Hunt-005 demo: rug pull, tool poisoning and implementation swap are all caught](docs/demo.gif)
+
+<sub>Replay of the real output of `python demo/run_demo.py`, rendered from captured terminal output (not a live screen recording). Very long lines are truncated and the local temp path is masked.</sub>
 
 ---
 
@@ -76,6 +84,7 @@ Full release notes (including known limitations at each release) are on the [Rel
 
 | Version | Highlights |
 |---|---|
+| [v1.9.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.9.0) | Sentinel CLI error handling: clearer messages, `--log-level DEBUG` tracebacks and a remediation hint (#12, #16). Canonical Apache-2.0 license text so GitHub detects it, README banner, Zenodo DOI in `CITATION.cff`. Dependabot updates, CodeQL scanning and `main` branch protection enabled |
 | [v1.8.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.8.0) | One-command Docker demo for Hunt-005 (`demo/`): drives the real baseline and proxy CLIs through a rug pull, a poisoned tool description and an implementation swap that keeps the schema identical, with a CI smoke test. Contribution path relaxed (small fixes go straight to a PR), Contributors Wanted block, scoped good-first-issue guides. No framework code changes |
 | [v1.7.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.7.0) | Implementation Identity Gate for Hunt-005 (`adapters/mcp_proxy.py`): an approved baseline is now bound to the resolved executable/script hashes and adjacent dependency-lock file behind the launch command, not just the tool schema - a server that keeps an identical schema while its implementation is swapped out under the same command reference is blocked before it is ever launched, not just quarantined after the fact. Closes a gap identified in independent third-party review (schema-only trust). Breaking: pre-1.7.0 approved baselines have no identity data and must be re-captured and re-approved |
 | [v1.6.0](https://github.com/sunilgentyala/gsh-framework/releases/tag/v1.6.0) | Security audit pass: newly-added MCP tools (added after an approved baseline) are no longer auto-authorized for invocation until reviewed; concurrent-write protection for MCP proxy stdout and LangChain adapter alert IDs; DNS-tunneling allowlist (Hunt-002) now raises its entropy/label-length bar for trusted apex domains instead of fully exempting them |
@@ -122,18 +131,18 @@ cd gsh-framework
 pip install -r requirements.txt
 ```
 
-**Alternative: install as a package.** The repo is also `pip`-installable from source (not yet published to PyPI, so install from the checkout, not `pip install gsh-framework`):
+**Alternative: install as a package.** It is published on PyPI as [`gsh-framework`](https://pypi.org/project/gsh-framework/) (from a checkout, use `pip install .` instead):
 
 ```bash
-pip install .              # adapters + all CLIs, PyYAML only (no SIEM/LangChain/Windows extras)
-pip install ".[splunk]"    # + Splunk/Elastic HTTP output (adapters/splunk_hec.py, elastic_bulk.py)
-pip install ".[langchain]" # + LangChain callback adapter
-pip install ".[windows]"   # + Windows Event Log adapter (Windows only)
-pip install ".[llm]"       # + OpenAI-compatible client for gsh-probe-eval.py
-pip install ".[dev]"       # + pytest, ruff, mypy, black
+pip install gsh-framework              # adapters + all CLIs, PyYAML only (no SIEM/LangChain/Windows extras)
+pip install "gsh-framework[splunk]"    # + Splunk/Elastic HTTP output (adapters/splunk_hec.py, elastic_bulk.py)
+pip install "gsh-framework[langchain]" # + LangChain callback adapter
+pip install "gsh-framework[windows]"   # + Windows Event Log adapter (Windows only)
+pip install "gsh-framework[llm]"       # + OpenAI-compatible client for gsh-probe-eval.py
+pip install "gsh-framework[dev]"       # + pytest, ruff, mypy, black
 ```
 
-This installs `gsh-sentinel-deploy`, `gsh-mcp-proxy`, `gsh-baseline`, `gsh-probe-eval`, and `gsh-ddi-log-parser` as commands (equivalent to `python scripts/<name>.py`), and makes `adapters` importable without manually adjusting `sys.path`. Extras can be combined, e.g. `pip install ".[splunk,langchain]"`.
+This installs `gsh-sentinel-deploy`, `gsh-mcp-proxy`, `gsh-baseline`, `gsh-probe-eval`, and `gsh-ddi-log-parser` as commands (equivalent to `python scripts/<name>.py`), and makes `adapters` importable without manually adjusting `sys.path`. Extras can be combined, e.g. `pip install "gsh-framework[splunk,langchain]"`.
 
 ### 2. Review the Sentinel Policy
 
