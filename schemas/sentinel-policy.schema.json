@@ -1,0 +1,1162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sunilgentyala/gsh-framework/schemas/sentinel-policy.schema.json",
+  "title": "GSH Sovereign Sentinel policy",
+  "description": "Structure of a Sentinel policy YAML (see configs/sentinel-policy-default.yaml). Top-level sections are optional so partial override policies stay valid; a section that is present must be well formed. Only the keywords type, properties, required, additionalProperties, items, enum, minimum and maximum are used, so the stdlib fallback validator in scripts/gsh-sentinel-deploy.py enforces exactly the same rules as jsonschema.",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "framework_version": {
+          "type": "string"
+        },
+        "organization": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string",
+          "enum": [
+            "production",
+            "staging",
+            "development"
+          ]
+        },
+        "log_level": {
+          "type": "string",
+          "enum": [
+            "DEBUG",
+            "INFO",
+            "WARN",
+            "WARNING",
+            "ERROR"
+          ]
+        },
+        "baseline_window_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "probe_set_path": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sentinel": {
+      "type": "object",
+      "properties": {
+        "default_mode": {
+          "type": "string",
+          "enum": [
+            "passive",
+            "standard",
+            "aggressive"
+          ]
+        },
+        "baseline_window_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "heartbeat_interval_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_monitored_agents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "session_snapshot_retention_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "auto_baseline_refresh": {
+          "type": "boolean"
+        },
+        "baseline_refresh_interval_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capability_manifest_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "hunt_001": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "step_count": {
+          "type": "object",
+          "properties": {
+            "max_iterations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "max_iterations"
+          ],
+          "additionalProperties": false
+        },
+        "tool_call_repetition": {
+          "type": "object",
+          "properties": {
+            "repeat_threshold": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "window_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "repeat_threshold",
+            "window_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "token_velocity": {
+          "type": "object",
+          "properties": {
+            "baseline_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "evaluation_window_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "baseline_multiplier",
+            "evaluation_window_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "sub_agent_depth": {
+          "type": "object",
+          "properties": {
+            "max_depth": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "max_depth"
+          ],
+          "additionalProperties": false
+        },
+        "session_budget": {
+          "type": "object",
+          "properties": {
+            "max_tokens_per_session": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "max_tokens_per_session"
+          ],
+          "additionalProperties": false
+        },
+        "compute_utilization": {
+          "type": "object",
+          "properties": {
+            "cpu_threshold_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "sustained_duration_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "cpu_threshold_percent",
+            "sustained_duration_seconds"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "hunt_002": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dns_query_analysis": {
+          "type": "object",
+          "properties": {
+            "length_threshold_chars": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "entropy_threshold_bits": {
+              "type": "number",
+              "minimum": 0
+            },
+            "base64_pattern_detection": {
+              "type": "boolean"
+            },
+            "combined_flag_threshold": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_critical": {
+              "type": "string"
+            },
+            "action_on_single_flag": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "length_threshold_chars",
+            "entropy_threshold_bits",
+            "combined_flag_threshold"
+          ],
+          "additionalProperties": false
+        },
+        "nxdomain": {
+          "type": "object",
+          "properties": {
+            "rate_threshold_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "evaluation_window_minutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "rate_threshold_percent",
+            "evaluation_window_minutes"
+          ],
+          "additionalProperties": false
+        },
+        "query_concentration": {
+          "type": "object",
+          "properties": {
+            "single_domain_threshold_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "evaluation_window_minutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "single_domain_threshold_percent",
+            "evaluation_window_minutes"
+          ],
+          "additionalProperties": false
+        },
+        "txt_record_abuse": {
+          "type": "object",
+          "properties": {
+            "rate_threshold_per_minute": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "rate_threshold_per_minute"
+          ],
+          "additionalProperties": false
+        },
+        "beaconing_detection": {
+          "type": "object",
+          "properties": {
+            "coefficient_of_variation_threshold": {
+              "type": "number",
+              "minimum": 0
+            },
+            "minimum_sample_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coefficient_of_variation_threshold",
+            "minimum_sample_count"
+          ],
+          "additionalProperties": false
+        },
+        "dhcp": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "anomalous_request_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "flag_identifier_anomalies": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "anomalous_request_multiplier"
+          ],
+          "additionalProperties": false
+        },
+        "ipam": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "flag_unauthorized_range_queries": {
+              "type": "boolean"
+            },
+            "flag_unexpected_lease_registrations": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "response_actions": {
+          "type": "object",
+          "properties": {
+            "block_flagged_domain": {
+              "type": "boolean"
+            },
+            "isolate_agent_namespace": {
+              "type": "boolean"
+            },
+            "capture_pcap_window_minutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "revoke_session_credentials": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "capture_pcap_window_minutes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "hunt_003": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "behavioral_drift": {
+          "type": "object",
+          "properties": {
+            "drift_threshold_medium": {
+              "type": "number",
+              "minimum": 0
+            },
+            "drift_threshold_high": {
+              "type": "number",
+              "minimum": 0
+            },
+            "drift_threshold_critical": {
+              "type": "number",
+              "minimum": 0
+            },
+            "action_on_medium": {
+              "type": "string"
+            },
+            "action_on_high": {
+              "type": "string"
+            },
+            "action_on_critical": {
+              "type": "string"
+            },
+            "embedding_model": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "drift_threshold_medium",
+            "drift_threshold_high",
+            "drift_threshold_critical"
+          ],
+          "additionalProperties": false
+        },
+        "probe_evaluation": {
+          "type": "object",
+          "properties": {
+            "schedule": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "weekly",
+                "on_model_update"
+              ]
+            },
+            "probe_set_version": {
+              "type": "string"
+            },
+            "expanded_probe_threshold": {
+              "type": "number",
+              "minimum": 0
+            },
+            "fixed_temperature": {
+              "type": "number",
+              "minimum": 0
+            },
+            "fixed_top_p": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "expanded_probe_threshold",
+            "fixed_temperature",
+            "fixed_top_p"
+          ],
+          "additionalProperties": false
+        },
+        "checkpoint_integrity": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "hash_algorithm": {
+              "type": "string"
+            },
+            "registry_path": {
+              "type": "string"
+            },
+            "action_on_mismatch": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "rag_poisoning": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "instruction_centroid_path": {
+              "type": "string"
+            },
+            "similarity_threshold": {
+              "type": "number",
+              "minimum": 0
+            },
+            "action_on_suspected_poison": {
+              "type": "string"
+            },
+            "scan_on_ingest": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "similarity_threshold"
+          ],
+          "additionalProperties": false
+        },
+        "refusal_rate": {
+          "type": "object",
+          "properties": {
+            "baseline_window_days": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "change_threshold_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "baseline_window_days",
+            "change_threshold_percent"
+          ],
+          "additionalProperties": false
+        },
+        "supply_chain": {
+          "type": "object",
+          "properties": {
+            "flag_unexpected_capabilities": {
+              "type": "boolean"
+            },
+            "capability_evaluation_on_update": {
+              "type": "boolean"
+            },
+            "baseline_capability_report_path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "hunt_004": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "tool_call_validation": {
+          "type": "object",
+          "properties": {
+            "enforce_capability_manifest": {
+              "type": "boolean"
+            },
+            "block_on_manifest_violation": {
+              "type": "boolean"
+            },
+            "action_on_violation": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "invocation_frequency": {
+          "type": "object",
+          "properties": {
+            "window_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "threshold_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "window_seconds",
+            "threshold_multiplier"
+          ],
+          "additionalProperties": false
+        },
+        "parameter_inspection": {
+          "type": "object",
+          "properties": {
+            "path_traversal_detection": {
+              "type": "boolean"
+            },
+            "credential_pattern_scan": {
+              "type": "boolean"
+            },
+            "encoding_scheme_detection": {
+              "type": "boolean"
+            },
+            "action_on_match": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "context_window_analysis": {
+          "type": "object",
+          "properties": {
+            "injection_similarity_threshold": {
+              "type": "number",
+              "minimum": 0
+            },
+            "embedding_model": {
+              "type": "string"
+            },
+            "action_on_match": {
+              "type": "string"
+            },
+            "log_full_context_snapshot": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "injection_similarity_threshold"
+          ],
+          "additionalProperties": false
+        },
+        "outbound_egress": {
+          "type": "object",
+          "properties": {
+            "enforce_allowlist": {
+              "type": "boolean"
+            },
+            "allowlist_path": {
+              "type": "string"
+            },
+            "action_on_violation": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sub_agent_spawning": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "max_depth": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "require_explicit_authorization": {
+              "type": "boolean"
+            },
+            "action_on_unauthorized_spawn": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "max_depth"
+          ],
+          "additionalProperties": false
+        },
+        "credential_access": {
+          "type": "object",
+          "properties": {
+            "monitor_env_variable_access": {
+              "type": "boolean"
+            },
+            "monitor_secrets_manager_calls": {
+              "type": "boolean"
+            },
+            "monitor_config_file_reads": {
+              "type": "boolean"
+            },
+            "action_on_detection": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "data_volume": {
+          "type": "object",
+          "properties": {
+            "read_volume_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "transmit_volume_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "action_on_breach": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "read_volume_multiplier",
+            "transmit_volume_multiplier"
+          ],
+          "additionalProperties": false
+        },
+        "response_actions": {
+          "type": "object",
+          "properties": {
+            "quarantine_session_on_violation": {
+              "type": "boolean"
+            },
+            "preserve_context_window_snapshot": {
+              "type": "boolean"
+            },
+            "revoke_session_credentials": {
+              "type": "boolean"
+            },
+            "emit_siem_alert": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "hunt_005": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "instruction_likelihood_threshold": {
+          "type": "number",
+          "minimum": 0
+        },
+        "block_on_invisible_content": {
+          "type": "boolean"
+        },
+        "block_on_definition_drift": {
+          "type": "boolean"
+        },
+        "flag_cross_tool_references": {
+          "type": "boolean"
+        },
+        "parameter_inspection": {
+          "type": "object",
+          "properties": {
+            "credential_pattern_scan": {
+              "type": "boolean"
+            },
+            "path_traversal_detection": {
+              "type": "boolean"
+            },
+            "encoding_scheme_detection": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "response_actions": {
+          "type": "object",
+          "properties": {
+            "quarantine_server_on_block": {
+              "type": "boolean"
+            },
+            "empty_tool_list_on_quarantine": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ztlv": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "default_posture": {
+          "type": "string",
+          "enum": [
+            "deny",
+            "allow"
+          ]
+        },
+        "evaluation_order": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audit_log": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "log_permitted_calls": {
+              "type": "boolean"
+            },
+            "log_blocked_calls": {
+              "type": "boolean"
+            },
+            "log_path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "enforcement_exceptions": {
+          "type": "object",
+          "properties": {
+            "exceptions": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ddi_fusion": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dns": {
+          "type": "object",
+          "properties": {
+            "log_source": {
+              "type": "string",
+              "enum": [
+                "syslog",
+                "api",
+                "file"
+              ]
+            },
+            "log_path": {
+              "type": "string"
+            },
+            "streaming_mode": {
+              "type": "boolean"
+            },
+            "batch_interval_seconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "dhcp": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "log_path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "ipam": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "api_endpoint": {
+              "type": "string"
+            },
+            "poll_interval_seconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "namespace_mapping": {
+          "type": "object",
+          "properties": {
+            "mappings": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "reputation_feeds": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "feeds": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "refresh_interval_hours": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "alerting": {
+      "type": "object",
+      "properties": {
+        "siem_output": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "format": {
+              "type": "string"
+            },
+            "destination": {
+              "type": "string",
+              "enum": [
+                "syslog",
+                "splunk_hec",
+                "elastic",
+                "webhook"
+              ]
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "syslog_host": {
+              "type": "string"
+            },
+            "syslog_port": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "syslog_protocol": {
+              "type": "string",
+              "enum": [
+                "UDP",
+                "TCP",
+                "TLS"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "alert_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "severity_levels": {
+          "type": "object",
+          "properties": {
+            "critical_pagerduty": {
+              "type": "boolean"
+            },
+            "high_email": {
+              "type": "boolean"
+            },
+            "medium_ticket": {
+              "type": "boolean"
+            },
+            "low_log_only": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "suppression": {
+          "type": "object",
+          "properties": {
+            "window_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_identical_alerts": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "siem_output": {
+      "type": "string",
+      "enum": [
+        "stdout",
+        "file",
+        "splunk",
+        "elastic",
+        "windows_eventlog"
+      ]
+    },
+    "splunk_hec_url": {
+      "type": "string"
+    },
+    "splunk_hec_token": {
+      "type": "string"
+    },
+    "splunk_index": {
+      "type": "string"
+    },
+    "elastic_url": {
+      "type": "string"
+    },
+    "elastic_index": {
+      "type": "string"
+    },
+    "elastic_api_key": {
+      "type": "string"
+    },
+    "elastic_flush_size": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "elastic_flush_interval_seconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "windows_eventlog_source": {
+      "type": "string"
+    },
+    "windows_eventlog_type": {
+      "type": "string"
+    },
+    "egress_allowlist": {
+      "description": "Either a flat list of approved destinations/tools, or the structured {domains, custom_endpoints} form.",
+      "type": [
+        "array",
+        "object"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "custom_endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "organization": {
+      "type": "string"
+    },
+    "sentinel_version": {
+      "type": "string"
+    },
+    "enforcement_mode": {
+      "type": "string",
+      "enum": [
+        "passive",
+        "standard",
+        "aggressive"
+      ]
+    },
+    "thresholds": {
+      "description": "Flat runtime thresholds read by the Sentinel engine; omitted keys fall back to built-in defaults.",
+      "type": "object",
+      "properties": {
+        "tool_calls_per_minute": {
+          "type": "number",
+          "minimum": 0
+        },
+        "loop_detection_window_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "loop_min_repetitions": {
+          "type": "number",
+          "minimum": 0
+        },
+        "token_velocity_per_minute": {
+          "type": "number",
+          "minimum": 0
+        },
+        "dns_queries_per_minute": {
+          "type": "number",
+          "minimum": 0
+        },
+        "behavioral_drift_sigma": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "actions": {
+      "type": "object",
+      "properties": {
+        "passive": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "log",
+              "alert",
+              "block"
+            ]
+          }
+        },
+        "standard": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "log",
+              "alert",
+              "block"
+            ]
+          }
+        },
+        "aggressive": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "log",
+              "alert",
+              "block"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

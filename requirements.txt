@@ -18,6 +18,16 @@
 pyyaml>=6.0.1
 
 # ---------------------------------------------------------------------------
+# Optional - Policy validation
+# ---------------------------------------------------------------------------
+
+# JSON Schema validation of the Sentinel policy YAML against
+# schemas/sentinel-policy.schema.json (gsh-sentinel-deploy.py load_policy()
+# and --validate-policy). If not installed, a stdlib validator enforces the
+# same rules with the same error messages.
+jsonschema>=4.18.0
+
+# ---------------------------------------------------------------------------
 # Optional - LLM endpoint integration
 # ---------------------------------------------------------------------------
 

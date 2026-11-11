@@ -21,6 +21,7 @@ Description:
 Usage:
     python gsh-sentinel-deploy.py --target <gateway-host> --mode <passive|standard|aggressive> \
         [--policy <yaml-path>] [--baseline-window <duration>] [--output <dir>]
+    python gsh-sentinel-deploy.py --validate-policy <yaml-path>
 
 Examples:
     # Passive baseline collection for 7 days
@@ -33,9 +34,13 @@ Examples:
     # Aggressive enforcement with output to custom directory
     python gsh-sentinel-deploy.py --target llm-gateway-01 --mode aggressive \
         --policy configs/sentinel-policy-default.yaml --output reports/
+
+    # Check a policy file against schemas/sentinel-policy.schema.json and exit
+    python gsh-sentinel-deploy.py --validate-policy configs/sentinel-policy-default.yaml
 """
 
 import argparse
+import difflib
 import hashlib
 import json
 import logging
@@ -55,6 +60,11 @@ try:
 except ImportError:
     yaml = None
 
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None
+
 # ---------------------------------------------------------------------------
 # Logging setup
 # ---------------------------------------------------------------------------
@@ -69,6 +79,10 @@ logger = logging.getLogger("gsh-sentinel")
 # ---------------------------------------------------------------------------
 
 VALID_MODES = ("passive", "standard", "aggressive")
+
+POLICY_SCHEMA_PATH = (
+    Path(__file__).resolve().parent.parent / "schemas" / "sentinel-policy.schema.json"
+)
 
 DEFAULT_POLICY: dict[str, Any] = {
     "organization": "default-org",
@@ -125,8 +139,216 @@ def parse_duration(duration_str: str) -> int:
     raise ValueError(f"Invalid duration format: '{duration_str}'. Use formats like 7d, 24h, 30m, 60s.")
 
 
+# ---------------------------------------------------------------------------
+# Policy schema validation
+# ---------------------------------------------------------------------------
+#
+# A policy is checked against schemas/sentinel-policy.schema.json before it
+# is merged over DEFAULT_POLICY. `jsonschema` is used when installed;
+# otherwise a stdlib validator covering the keywords that schema uses (type,
+# properties, required, additionalProperties, items, enum, minimum, maximum)
+# enforces the same rules. Both paths produce identical error messages.
+
+class PolicyValidationError(ValueError):
+    """A policy file does not match the Sentinel policy schema."""
+
+    def __init__(self, source: str, errors: list[str]):
+        self.source = source
+        self.errors = errors
+        if len(errors) == 1:
+            detail = errors[0]
+        else:
+            detail = f"{len(errors)} errors: " + "; ".join(errors)
+        super().__init__(f"Invalid policy '{source}': {detail}")
+
+
+_TYPE_LABELS = {
+    "object": "a mapping",
+    "array": "a list",
+    "string": "a string",
+    "number": "a number",
+    "integer": "an integer",
+    "boolean": "a boolean",
+    "null": "null",
+}
+
+
+def _field_name(path: tuple) -> str:
+    """Render a path such as ('hunt_001', 'step_count') as 'hunt_001.step_count'."""
+    name = ""
+    for part in path:
+        if isinstance(part, int):
+            name += f"[{part}]"
+        else:
+            name += f".{part}" if name else str(part)
+    return name or "top level"
+
+
+def _type_name(value: Any) -> str:
+    return "null" if value is None else type(value).__name__
+
+
+def _matches_type(value: Any, expected: str) -> bool:
+    if expected == "object":
+        return isinstance(value, dict)
+    if expected == "array":
+        return isinstance(value, list)
+    if expected == "string":
+        return isinstance(value, str)
+    if expected == "boolean":
+        return isinstance(value, bool)
+    if expected == "null":
+        return value is None
+    if isinstance(value, bool):  # bool is an int subclass, but never a number here
+        return False
+    if expected == "number":
+        return isinstance(value, (int, float))
+    if expected == "integer":
+        return isinstance(value, int) or (isinstance(value, float) and value.is_integer())
+    return False
+
+
+def _type_error(path: tuple, expected: Any, value: Any) -> str:
+    types = [expected] if isinstance(expected, str) else list(expected)
+    wanted = " or ".join(_TYPE_LABELS.get(t, t) for t in types)
+    return f"{_field_name(path)} must be {wanted}, got {_type_name(value)}"
+
+
+def _missing_error(path: tuple, key: str) -> str:
+    return f"{_field_name(path + (key,))} is required but missing"
+
+
+def _unknown_key_error(path: tuple, key: Any, known: list[str]) -> str:
+    if path:
+        message = f"{_field_name(path)} has unknown key '{key}'"
+    else:
+        message = f"unknown top-level section '{key}'"
+    close = difflib.get_close_matches(str(key), known, n=1)
+    return f"{message} (did you mean '{close[0]}'?)" if close else message
+
+
+def _enum_error(path: tuple, allowed: list, value: Any) -> str:
+    choices = ", ".join(str(a) for a in allowed)
+    return f"{_field_name(path)} must be one of: {choices}; got {value!r}"
+
+
+def _bound_error(path: tuple, keyword: str, bound: Any, value: Any) -> str:
+    symbol = ">=" if keyword == "minimum" else "<="
+    return f"{_field_name(path)} must be {symbol} {bound}, got {value!r}"
+
+
+def _stdlib_schema_errors(value: Any, schema: dict, path: tuple = ()) -> list[str]:
+    """Validate *value* against the subset of JSON Schema the policy schema uses."""
+    expected = schema.get("type")
+    if expected is not None:
+        types = [expected] if isinstance(expected, str) else expected
+        if not any(_matches_type(value, t) for t in types):
+            return [_type_error(path, expected, value)]
+
+    errors: list[str] = []
+    if "enum" in schema and value not in schema["enum"]:
+        errors.append(_enum_error(path, schema["enum"], value))
+
+    if _matches_type(value, "number"):
+        if "minimum" in schema and value < schema["minimum"]:
+            errors.append(_bound_error(path, "minimum", schema["minimum"], value))
+        if "maximum" in schema and value > schema["maximum"]:
+            errors.append(_bound_error(path, "maximum", schema["maximum"], value))
+
+    if isinstance(value, dict):
+        properties = schema.get("properties", {})
+        for key in schema.get("required", []):
+            if key not in value:
+                errors.append(_missing_error(path, key))
+        for key, child in value.items():
+            if key in properties:
+                errors.extend(_stdlib_schema_errors(child, properties[key], path + (key,)))
+            elif schema.get("additionalProperties") is False:
+                errors.append(_unknown_key_error(path, key, list(properties)))
+
+    if isinstance(value, list) and "items" in schema:
+        for index, item in enumerate(value):
+            errors.extend(_stdlib_schema_errors(item, schema["items"], path + (index,)))
+
+    return errors
+
+
+def _jsonschema_errors(value: Any, schema: dict) -> list[str]:
+    """Validate with `jsonschema`, reporting in the same wording as the stdlib path."""
+    errors: list[str] = []
+    for err in jsonschema.Draft202012Validator(schema).iter_errors(value):
+        path = tuple(err.absolute_path)
+        if err.validator == "type":
+            errors.append(_type_error(path, err.validator_value, err.instance))
+        elif err.validator == "required":
+            errors.extend(
+                _missing_error(path, key)
+                for key in err.validator_value if key not in err.instance
+            )
+        elif err.validator == "additionalProperties":
+            known = list(err.schema.get("properties", {}))
+            errors.extend(
+                _unknown_key_error(path, key, known)
+                for key in err.instance if key not in known
+            )
+        elif err.validator == "enum":
+            errors.append(_enum_error(path, err.validator_value, err.instance))
+        elif err.validator in ("minimum", "maximum"):
+            errors.append(_bound_error(path, err.validator, err.validator_value, err.instance))
+        else:
+            errors.append(f"{_field_name(path)}: {err.message}")
+    return errors
+
+
+def load_policy_schema() -> dict | None:
+    """Return the Sentinel policy JSON Schema, or None if the file is not present."""
+    if not POLICY_SCHEMA_PATH.exists():
+        return None
+    with open(POLICY_SCHEMA_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def validate_policy(loaded: Any, source: str, schema: dict) -> None:
+    """Raise PolicyValidationError naming each bad field if *loaded* breaks *schema*."""
+    if jsonschema is not None:
+        errors = _jsonschema_errors(loaded, schema)
+    else:
+        errors = _stdlib_schema_errors(loaded, schema)
+    if errors:
+        raise PolicyValidationError(source, sorted(set(errors)))
+
+
+def _read_policy_yaml(policy_path: str) -> Any:
+    try:
+        with open(policy_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        problem = getattr(exc, "problem", None) or str(exc).splitlines()[0]
+        raise ValueError(f"Invalid YAML in policy '{policy_path}': {problem}") from exc
+
+
+def validate_policy_file(policy_path: str) -> None:
+    """
+    Strict check behind --validate-policy: unlike load_policy(), nothing here
+    falls back to defaults. A missing file, missing PyYAML, or missing schema
+    is an error, because the caller asked for a verdict on this exact file.
+    """
+    if not Path(policy_path).is_file():
+        raise FileNotFoundError(f"Policy file not found: '{policy_path}'")
+    if yaml is None:
+        raise ValueError("PyYAML is required to validate a policy. Run: pip install pyyaml")
+    schema = load_policy_schema()
+    if schema is None:
+        raise FileNotFoundError(f"Policy schema not found at '{POLICY_SCHEMA_PATH}'")
+    validate_policy(_read_policy_yaml(policy_path), policy_path, schema)
+
+
 def load_policy(policy_path: str) -> dict:
-    """Load and validate the sentinel policy YAML. Falls back to defaults on failure."""
+    """
+    Load the sentinel policy YAML, validate it against the policy schema, and
+    merge it over the built-in defaults. A missing path or file falls back to
+    defaults; a file that exists but is malformed raises ValueError.
+    """
     if not policy_path:
         logger.warning("No policy path provided. Using built-in defaults.")
         return DEFAULT_POLICY.copy()
@@ -140,12 +362,16 @@ def load_policy(policy_path: str) -> dict:
         logger.warning("PyYAML not installed. Using built-in defaults. Run: pip install pyyaml")
         return DEFAULT_POLICY.copy()
 
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            loaded = yaml.safe_load(f)
-    except yaml.YAMLError as exc:
-        problem = getattr(exc, "problem", None) or str(exc).splitlines()[0]
-        raise ValueError(f"Invalid YAML in policy '{policy_path}': {problem}") from exc
+    loaded = _read_policy_yaml(policy_path)
+
+    schema = load_policy_schema()
+    if schema is None:
+        logger.warning(
+            f"Policy schema not found at '{POLICY_SCHEMA_PATH}'. "
+            "Skipping policy validation."
+        )
+    else:
+        validate_policy(loaded, policy_path, schema)
 
     # Merge loaded values over defaults
     policy = DEFAULT_POLICY.copy()
@@ -634,15 +860,23 @@ Examples:
   python gsh-sentinel-deploy.py --target llm-gateway-01 --mode passive --baseline-window 7d
   python gsh-sentinel-deploy.py --target llm-gateway-01 --mode standard --policy configs/sentinel-policy-default.yaml
   python gsh-sentinel-deploy.py --target llm-gateway-01 --mode aggressive --output reports/
+  python gsh-sentinel-deploy.py --validate-policy configs/sentinel-policy-default.yaml
         """,
     )
     parser.add_argument(
-        "--target", required=True,
-        help="LLM gateway hostname or identifier (e.g. llm-gateway-01)"
+        "--target",
+        help="LLM gateway hostname or identifier (e.g. llm-gateway-01). "
+             "Required unless --validate-policy is used."
     )
     parser.add_argument(
-        "--mode", required=True, choices=VALID_MODES,
-        help="Enforcement mode: passive (baseline only), standard (alert), aggressive (block + alert)"
+        "--mode", choices=VALID_MODES,
+        help="Enforcement mode: passive (baseline only), standard (alert), aggressive (block + alert). "
+             "Required unless --validate-policy is used."
+    )
+    parser.add_argument(
+        "--validate-policy", metavar="PATH", default=None,
+        help="Validate a policy YAML against schemas/sentinel-policy.schema.json and exit "
+             "(0 = valid, 1 = invalid). No sentinel is started."
     )
     parser.add_argument(
         "--policy", default=None,
@@ -669,6 +903,19 @@ def main() -> int:
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
+
+    if args.validate_policy:
+        try:
+            validate_policy_file(args.validate_policy)
+        except (ValueError, FileNotFoundError) as e:
+            logger.error(str(e))
+            return 1
+        print(f"OK: policy '{args.validate_policy}' is valid")
+        return 0
+
+    missing = [flag for flag, value in (("--target", args.target), ("--mode", args.mode)) if not value]
+    if missing:
+        parser.error(f"the following arguments are required: {', '.join(missing)}")
 
     output_dir = args.output
 

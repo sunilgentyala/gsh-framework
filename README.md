@@ -51,7 +51,6 @@ GSH is actively looking for security engineers, Python developers, detection eng
 **Good first contributions** (each has a scoped issue with files, acceptance criteria and a difficulty estimate):
 
 - [Sample benign and rogue MCP telemetry](https://github.com/sunilgentyala/gsh-framework/issues/3)
-- [Sentinel policy JSON Schema validation](https://github.com/sunilgentyala/gsh-framework/issues/1)
 - [Architecture diagram](https://github.com/sunilgentyala/gsh-framework/issues/4)
 - [SARIF report output](https://github.com/sunilgentyala/gsh-framework/issues/10)
 - CrewAI / AutoGen integrations and additional MCP transports (open an issue first)
@@ -150,7 +149,14 @@ This installs `gsh-sentinel-deploy`, `gsh-mcp-proxy`, `gsh-baseline`, `gsh-probe
 cat configs/sentinel-policy-default.yaml
 ```
 
-Edit it to set your organization name, SIEM output destination, and egress allowlist before deploying.
+Edit it to set your organization name, SIEM output destination, and egress allowlist before deploying. Then check your edits against the policy schema (`schemas/sentinel-policy.schema.json`):
+
+```bash
+python scripts/gsh-sentinel-deploy.py --validate-policy configs/sentinel-policy-default.yaml
+# OK: policy 'configs/sentinel-policy-default.yaml' is valid
+```
+
+The same check runs every time a Sentinel loads a policy. A typo'd key, a missing threshold, or a wrong type stops the run with an error naming the field and the file, for example `Invalid policy 'configs/my-policy.yaml': hunt_001.step_count.max_iterations must be an integer, got str`. It uses `jsonschema` if installed and an equivalent stdlib validator otherwise.
 
 ### 3. Deploy a Sovereign Sentinel
 
@@ -265,6 +271,8 @@ gsh-framework/
 │   └── hunt-005-mcp-tool-poisoning.md
 ├── probes/
 │   └── standardized-probe-set-v1.json
+├── schemas/
+│   └── sentinel-policy.schema.json  # JSON Schema the Sentinel policy YAML is validated against
 ├── scripts/
 │   ├── _cli_shims.py               # console-script entry points (pyproject.toml) for the scripts below
 │   ├── ddi-log-parser-ai.py
@@ -274,6 +282,7 @@ gsh-framework/
 │   └── gsh-sentinel-deploy.py
 ├── tests/
 │   ├── test_ddi_log_parser.py
+│   ├── test_policy_validation.py
 │   ├── test_gsh_baseline.py
 │   ├── test_mcp_proxy.py
 │   ├── test_siem_adapters.py
