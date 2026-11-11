@@ -164,8 +164,10 @@ def test_typoed_nested_key_suggests_the_real_one(backend, tmp_path):
         ),
         (
             lambda p: p.update(siem_output="carrier-pigeon"),
-            "siem_output must be one of: stdout, file, splunk, elastic, windows_eventlog; "
-            "got 'carrier-pigeon'",
+            (
+                "siem_output must be one of: stdout, file, splunk, elastic, windows_eventlog; "
+                "got 'carrier-pigeon'"
+            ),
         ),
         (
             lambda p: p["ztlv"].update(evaluation_order=["capability_manifest", 7]),
